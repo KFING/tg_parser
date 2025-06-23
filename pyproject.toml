@@ -5,9 +5,9 @@ description = ""
 authors = ["Egor <egormeschenko@gmail.com>"]
 readme = "README.md"
 package-mode = false
-
 [tool.poetry.dependencies]
-python = "^3.12"
+
+
 
 # web runtime
 greenlet = "^3.1.1"
@@ -24,7 +24,6 @@ asyncpg = "^0.29.0"
 alembic = "^1.13.2"
 sqlalchemy = { extras = ["mypy"], version = "^2.0.31"}
 aioredis = { version = "^2.0.1", extras = ["hiredis"]}
-
 bcrypt = "^3.2.2"  # for jwt
 pycryptodomex = "^3.20.0"  # for jwt
 pyOpenSSL = "^24.1.0"  # for jwt
@@ -36,6 +35,7 @@ streamlit = "^1.36.0"
 plotly = "^5.22.0"
 
 # utils
+python = "^3.12"
 watchdog = "^4.0.1"
 python-json-logger = "^2.0.7"
 ujson = "^5.10.0"
@@ -44,7 +44,9 @@ aiohttp = "^3.9.5"
 jinja2 = "^3.1.2"
 python-dateutil = "^2.9.0"
 disposable-email-domains = "^0.0.104"
-
+telethon = "^1.36.0"
+pytubefix = "^6.7.0"
+beautifulsoup4 = "^4.13.4"
 # lint
 ruff = "^0.5.5"
 vulture = "^2.11"
@@ -72,14 +74,11 @@ types-mock = "^5.1.0.20240425"
 types-pyOpenSSL = "^22.0.10"
 celery-types = "^0.22.0"
 asyncpg-stubs = "^0.29.1"
-telethon = "^1.36.0"
-pytubefix = "^6.7.0"
 sentry-sdk = "^2.11.0"
 pydantic-settings = "^2.4.0"
 pytz = "2024.1"
 types-pytz = "^2024.1.0.20240417"
 setuptools = "^75.8.0"
-beautifulsoup4 = "^4.13.4"
 html2text = "^2025.4.15"
 pyperclip = "^1.9.0"
 requests = "^2.32.4"

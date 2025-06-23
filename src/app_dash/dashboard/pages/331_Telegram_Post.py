@@ -4,7 +4,6 @@ from pathlib import Path
 
 import streamlit as st
 from telethon import TelegramClient
-
 from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.dto.download_post_recipe import DownloadPostContentRecipe, DownloadQuality
@@ -13,7 +12,6 @@ from src.env import SCRAPPER_SESSION_DIR__TELEGRAM
 from src.external_telegram import telegram_scrapy
 
 logger = logging.getLogger(__name__)
-
 
 @st.cache_resource
 async def download_post_telegram(

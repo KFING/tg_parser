@@ -19,3 +19,4 @@ class TgPostDbMdl(Base):
     content: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     link: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     # relationships:
+            
