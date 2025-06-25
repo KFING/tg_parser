@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import aiohttp
@@ -6,7 +7,7 @@ from bs4 import BeautifulSoup
 import json
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import HttpUrl
 
@@ -16,7 +17,11 @@ from src.env import SCRAPPER_RESULTS_DIR_TELEGRAM_RAW
 
 logger = logging.getLogger(__name__)
 
-async def get_channel_messages(channel_id: str, utc_dt_to: datetime, utc_dt_from: datetime) -> list[TgPost] | None:
+START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
+
+END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
+
+async def get_channel_messages(channel_id: str, utc_dt_to: datetime = END_OF_EPOCH, utc_dt_from: datetime = START_OF_EPOCH) -> list[TgPost] | None:
     """
     Parse messages from a Telegram channel and save them to a JSON file
     """
@@ -35,7 +40,7 @@ async def get_channel_messages(channel_id: str, utc_dt_to: datetime, utc_dt_from
         if response.status != 200:
             logger.warning(f"Failed to access channel. Status code: {response.status}")
             return None
-
+        print(type(utc_dt_to))
         # Get messages from the first response
         messages = extract_messages(await response.text(), channel_id, as_utc(utc_dt_to), as_utc(utc_dt_from))
         if not messages:
@@ -158,7 +163,7 @@ def save_messages_to_json(messages, filename):
     logger.debug(f"\nSuccessfully saved {len(messages)} messages to {filename}")
 
 
-def main():
+async def main():
     """
     Main function to handle user input and start parsing
     """
@@ -181,7 +186,7 @@ def main():
 
         logger.debug(f'\nStarting to parse channel: @{channel_link}')
 
-        filename = get_channel_messages(channel_link)
+        filename =  await get_channel_messages(channel_link)
 
         if filename:
             logger.debug('\nParsing completed successfully!')
@@ -196,4 +201,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
