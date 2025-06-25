@@ -1,5 +1,7 @@
 from enum import Enum
 
+from pydantic import BaseModel
+
 
 class TgTaskStatus(Enum):
     completed = "completed"
@@ -7,5 +9,10 @@ class TgTaskStatus(Enum):
     processing = "processing"
 
 
-class TgTask(Enum):
+class TgTaskEnum(Enum):
     parse = 'parse'
+
+class TgTask(BaseModel):
+    chanel_id: str
+    status: TgTaskStatus
+    task: TgTaskEnum

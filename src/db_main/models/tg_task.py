@@ -4,7 +4,7 @@ from sqlalchemy import DateTime, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db_main.database import Base
-from src.dto.tg_task import TgTask, TgTaskStatus
+from src.dto.tg_task import TgTaskEnum, TgTaskStatus
 
 
 class TgTaskDbMdl(Base):
@@ -13,7 +13,7 @@ class TgTaskDbMdl(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     # props:
-    channel_name: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
+    channel_id: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     status: Mapped[TgTaskStatus] = mapped_column(Enum(TgTaskStatus), nullable=False)
-    task: Mapped[TgTask] = mapped_column(Enum(TgTask), nullable=False)
+    task: Mapped[TgTaskEnum] = mapped_column(Enum(TgTaskEnum), nullable=False)
     # relationships:
