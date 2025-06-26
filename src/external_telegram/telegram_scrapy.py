@@ -22,6 +22,20 @@ START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis()
+
+async def get_progress_parser(channel_name: str, *, log_extra: dict[str, str]) -> int:
+    if not await rds.get(f'{channel_name}_dt_to'):
+        return None
+    if not await rds.get(f'{channel_name}_dt_from'):
+        return None
+    if not await rds.get(f'{channel_name}_dt_now'):
+        return None
+    utc_dt_from = as_utc(datetime.fromisoformat(await rds.get(f'{channel_name}_dt_from')))
+    utc_dt_to = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_to'))
+    utc_dt_now = as_utc(datetime.fromisoformat(await rds.get(f'{channel_name}_dt_now')))
+    return int(((utc_dt_to - utc_dt_now) * 100) / (utc_dt_to - utc_dt_from))
+
+
 async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_EPOCH, utc_dt_from: datetime = START_OF_EPOCH, *, log_extra: dict[str, str]) -> list[TgPost] | None:
     """
     Parse messages from a Telegram channel and save them to a JSON file
@@ -30,17 +44,17 @@ async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_E
         return None
     if not await rds.get(f'{channel_name}_dt_from'):
         return None
-    utc_dt_to = await rds.get(f'{channel_name}_dt_to')
-    utc_dt_from = await rds.get(f'{channel_name}_dt_from')
+    utc_dt_to = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_to'))
+    utc_dt_from = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_from'))
     all_messages = []
     consecutive_empty_responses = 0
     max_empty_responses = 3
-
+    session = aiohttp.ClientSession()
     try:
 
         # First request to get the latest messages and the first message ID
         url = f"https://t.me/s/{channel_name}"
-        session = aiohttp.ClientSession()
+
         response = await session.get(url)
 
 
@@ -98,6 +112,7 @@ async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_E
 
     except Exception as e:
         logger.warning(f"Error occurred: {str(e)}", extra=log_extra)
+        await session.close()
         return None
 
 

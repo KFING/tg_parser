@@ -25,8 +25,8 @@ rds = Redis()
 
 
 
-@tg_parser_router.post("/add")
-async def start(parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra), db: AsyncSession = Depends(get_db_main)) -> int:
+@tg_parser_router.post("/start")
+async def start_parser(parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra), db: AsyncSession = Depends(get_db_main)) -> int:
     await rds.set(f'{parsing_parameters.channel_name}_dt_to', str(parsing_parameters.dt_to))
     await rds.set(f'{parsing_parameters.channel_name}_dt_from', str(parsing_parameters.dt_from))
     tg_posts = await telegram_scrapy.get_channel_messages(parsing_parameters.channel_name, parsing_parameters.dt_to, parsing_parameters.dt_from, log_extra=log_extra)
@@ -38,18 +38,19 @@ async def start(parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str
     await tg_post_crud.create_tg_posts(db, new_posts)
     return 0
 
-@tg_parser_router.patch("/change")
-async def stop(parsing_parameters: ParsingParametersApiMdl) -> None:
+@tg_parser_router.delete("/stop")
+async def stop_parser(parsing_parameters: ParsingParametersApiMdl) -> None:
     await rds.delete(f'{parsing_parameters.channel_name}_dt_to')
     await rds.delete(f'{parsing_parameters.channel_name}_dt_from')
     return
 
 @tg_parser_router.get("/progress")
-async def get_progress(token: str, log_extra: dict[str, str] = Depends(get_log_extra)) -> None:
+async def get_progress(channel_name: str, log_extra: dict[str, str] = Depends(get_log_extra)) -> None:
+    await telegram_scrapy.get_progress_parser(channel_name, log_extra=log_extra)
     return
 
-@tg_parser_router.delete("/stop")
-async def change_params(parsing_parameters: ParsingParametersApiMdl) -> None:
+@tg_parser_router.patch("/change")
+async def change_params_parser(parsing_parameters: ParsingParametersApiMdl) -> None:
     await rds.set(f'{parsing_parameters.channel_name}_dt_to', str(parsing_parameters.dt_to))
     await rds.set(f'{parsing_parameters.channel_name}_dt_from', str(parsing_parameters.dt_from))
     return
