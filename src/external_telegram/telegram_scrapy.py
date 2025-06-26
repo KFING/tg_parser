@@ -10,6 +10,7 @@ import os
 from datetime import datetime, timezone
 
 from pydantic import HttpUrl
+from redis.asyncio import Redis
 
 from src.common.moment import as_utc
 from src.dto.tg_post import TgPost
@@ -20,11 +21,17 @@ logger = logging.getLogger(__name__)
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
-
-async def get_channel_messages(channel_id: str, utc_dt_to: datetime = END_OF_EPOCH, utc_dt_from: datetime = START_OF_EPOCH) -> list[TgPost] | None:
+rds = Redis()
+async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_EPOCH, utc_dt_from: datetime = START_OF_EPOCH, *, log_extra: dict[str, str]) -> list[TgPost] | None:
     """
     Parse messages from a Telegram channel and save them to a JSON file
     """
+    if not await rds.get(f'{channel_name}_dt_to'):
+        return None
+    if not await rds.get(f'{channel_name}_dt_from'):
+        return None
+    utc_dt_to = await rds.get(f'{channel_name}_dt_to')
+    utc_dt_from = await rds.get(f'{channel_name}_dt_from')
     all_messages = []
     consecutive_empty_responses = 0
     max_empty_responses = 3
@@ -32,69 +39,69 @@ async def get_channel_messages(channel_id: str, utc_dt_to: datetime = END_OF_EPO
     try:
 
         # First request to get the latest messages and the first message ID
-        url = f"https://t.me/s/{channel_id}"
+        url = f"https://t.me/s/{channel_name}"
         session = aiohttp.ClientSession()
         response = await session.get(url)
 
 
         if response.status != 200:
-            logger.warning(f"Failed to access channel. Status code: {response.status}")
+            logger.warning(f"Failed to access channel. Status code: {response.status}", extra=log_extra)
             return None
-        print(type(utc_dt_to))
         # Get messages from the first response
-        messages = extract_messages(await response.text(), channel_id, as_utc(utc_dt_to), as_utc(utc_dt_from))
+        messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
         if not messages:
-            logger.debug("No messages found in the channel")
+            logger.debug("No messages found in the channel", extra=log_extra)
             return None
 
         # Get the highest message ID as our starting point
         current_id = max(msg['id'] for msg in messages if msg['id'] is not None)
         all_messages.extend(messages)
-        logger.debug(f"Found initial {len(messages)} messages")
+        logger.debug(f"Found initial {len(messages)} messages", extra=log_extra)
 
         # Continue fetching older messages
         while True:
-            url = f"https://t.me/s/{channel_id}/{current_id}"
+            url = f"https://t.me/s/{channel_name}/{current_id}"
 
             response = await session.get(url)
 
             if response.status != 200:
-                logger.warning(f"Failed to fetch messages. Status code: {response.status}")
+                logger.warning(f"Failed to fetch messages. Status code: {response.status}", extra=log_extra)
                 break
 
-            messages = extract_messages(await response.text(), channel_id, as_utc(utc_dt_to), as_utc(utc_dt_from))
+            messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from))
 
             if not messages:
                 consecutive_empty_responses += 1
-                logger.warning(f"No messages found for ID {current_id}. Empty responses: {consecutive_empty_responses}")
+                logger.warning(f"No messages found for ID {current_id}. Empty responses: {consecutive_empty_responses}", extra=log_extra)
                 if consecutive_empty_responses >= max_empty_responses:
-                    logger.warning("Reached maximum number of consecutive empty responses. Stopping.")
+                    logger.warning("Reached maximum number of consecutive empty responses. Stopping.", extra=log_extra)
                     break
             else:
                 consecutive_empty_responses = 0
                 new_messages = [msg for msg in messages if msg['id'] not in [m['id'] for m in all_messages]]
                 all_messages.extend(new_messages)
-                logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)}")
+                logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)}", extra=log_extra)
                 current_id = min(msg['id'] for msg in messages if msg['id'] is not None) - 1
 
             if current_id <= 1:
-                logger.warning("Reached the beginning of the channel. Stopping.")
+                logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
                 break
 
             time.sleep(1)  # Delay to avoid hitting rate limits
 
         # Save messages to file
         if all_messages:
-            filename = f'{channel_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            filename = f'{channel_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             save_messages_to_json(all_messages, filename)
             return all_messages
+        return None
 
     except Exception as e:
-        logger.warning(f"Error occurred: {str(e)}")
+        logger.warning(f"Error occurred: {str(e)}", extra=log_extra)
         return None
 
 
-def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, utc_dt_from: datetime) -> list[TgPost]:
+def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, utc_dt_from: datetime, *, log_extra: dict[str, str]) -> list[TgPost]:
     """
     Extract messages from HTML content using BeautifulSoup
     """
@@ -112,16 +119,16 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
 
             # Get date
             date_elem = message_div.find('time', class_='time')
-            utc_dt = as_utc(date_elem['datetime'] if date_elem else datetime.utcnow())
+            utc_dt = as_utc(datetime.fromisoformat(date_elem['datetime']) if date_elem else datetime.utcnow())
 
             if utc_dt_to >= utc_dt:
                 """logger.debug(
-                    f"get_posts_list_channel({channel_id}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
+                    f"get_posts_list_channel({channel_name}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
                 )"""
                 continue
             if utc_dt > utc_dt_from:
                 """logger.debug(
-                    f"get_posts_list_channel({channel_id}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
+                    f"get_posts_list_channel({channel_name}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
                 )"""
                 return messages
 
@@ -146,7 +153,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             messages.append(message)
 
         except Exception as e:
-            logger.warning(f"Error processing message: {str(e)}")
+            logger.warning(f"Error processing message: {str(e)}", extra=log_extra)
             continue
 
     return messages
@@ -170,34 +177,12 @@ async def main():
     logger.debug('Telegram Channel Parser (Unofficial)')
     logger.debug('--------------------------------')
 
-    while True:
-        channel_link = input('\nEnter Telegram channel username or link (or "q" to quit): ').strip()
+    channel_link = 'mychannelkfing'
 
-        if channel_link.lower() == 'q':
-            break
+    logger.debug('Please enter a valid channel username or link')
+    logger.debug(f'\nStarting to parse channel: @{channel_link}')
 
-        if not channel_link:
-            logger.debug('Please enter a valid channel username or link')
-            continue
-
-        # Extract username from link if full link is provided
-        if 't.me/' in channel_link:
-            channel_link = channel_link.split('t.me/')[-1].split('/')[0]
-
-        logger.debug(f'\nStarting to parse channel: @{channel_link}')
-
-        filename =  await get_channel_messages(channel_link)
-
-        if filename:
-            logger.debug('\nParsing completed successfully!')
-        else:
-            logger.debug('\nFailed to parse the channel. Please check the username/link and try again.')
-
-        choice = input('\nWould you like to parse another channel? (y/n): ').strip().lower()
-        if choice != 'y':
-            break
-
-    logger.debug('\nThank you for using Telegram Channel Parser!')
+    # filename =  await get_channel_messages(channel_link)
 
 
 if __name__ == '__main__':

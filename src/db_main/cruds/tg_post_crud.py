@@ -12,23 +12,25 @@ from src.dto.tg_post import TgPost
 
 
 async def create_tg_post(db: AsyncSession, tg_post: TgPost) -> TgPostDbMdl:
-    tg_post = TgPostDbMdl(
+    post = TgPostDbMdl(
         post_id=tg_post.tg_post_id,
         tg_channel_id=tg_post.tg_channel_id,
         tg_pb_date=tg_post.tg_pb_date,
         content=tg_post.content,
         link=str(tg_post.link),
     )
-    db.add(tg_post)
+    db.add(post)
     await db.commit()
-    return tg_post
+    return post
 
+async def create_tg_posts(db: AsyncSession, tg_posts: list[TgPostDbMdl]) -> list[TgPostDbMdl]:
+    posts: list[TgPostDbMdl] = []
+    for tg_post in tg_posts:
+        posts.append(tg_post)
+        db.add(tg_post)
+    await db.commit()
+    return posts
 
-async def get_post_by_channel_id_and_post_id(db: AsyncSession, tg_channel_id: str, tg_post_id: int) -> TgPostDbMdl:
-    invoices = await db.execute(
-        select(TgPostDbMdl).where(
-            (TgPostDbMdl.tg_channel_id == tg_channel_id)
-            and (TgPostDbMdl.post_id == tg_post_id)
-        )
-    )
-    return invoices.scalars().first()
+async def get_all_id_posts(db: AsyncSession) -> Sequence[int]:
+    invoices = await db.execute(select(TgPostDbMdl.post_id))
+    return invoices.scalars().all()

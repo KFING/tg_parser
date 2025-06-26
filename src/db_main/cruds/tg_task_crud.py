@@ -25,7 +25,7 @@ async def create_tg_task(db: AsyncSession, tg_task: TgPost) -> TgTaskDbMdl:
 async def get_task_db(db: AsyncSession, channel_id: str, tg_post_id: int) -> TgTaskDbMdl:
     """invoices = await db.execute(
         select(TgTaskDbMdl).where(
-            (TgTaskDbMdl.channel_id == tg_channel_id)
+            (TgTaskDbMdl.channel_name == tg_channel_id)
             and (TgTaskDbMdl.post_id == tg_post_id)
         )
     )
