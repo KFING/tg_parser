@@ -11,9 +11,13 @@ from datetime import datetime, timezone
 
 from pydantic import HttpUrl
 from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 from src.common.moment import as_utc
+from src.db_main.models.tg_post import TgPostDbMdl
 from src.dto.tg_post import TgPost
+from src.dto.tg_task import TgTaskStatus
 from src.env import SCRAPPER_RESULTS_DIR_TELEGRAM_RAW
 
 logger = logging.getLogger(__name__)
@@ -23,17 +27,6 @@ START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis()
 
-async def get_progress_parser(channel_name: str, *, log_extra: dict[str, str]) -> int:
-    if not await rds.get(f'{channel_name}_dt_to'):
-        return None
-    if not await rds.get(f'{channel_name}_dt_from'):
-        return None
-    if not await rds.get(f'{channel_name}_dt_now'):
-        return None
-    utc_dt_from = as_utc(datetime.fromisoformat(await rds.get(f'{channel_name}_dt_from')))
-    utc_dt_to = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_to'))
-    utc_dt_now = as_utc(datetime.fromisoformat(await rds.get(f'{channel_name}_dt_now')))
-    return int(((utc_dt_to - utc_dt_now) * 100) / (utc_dt_to - utc_dt_from))
 
 
 async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_EPOCH, utc_dt_from: datetime = START_OF_EPOCH, *, log_extra: dict[str, str]) -> list[TgPost] | None:
@@ -41,8 +34,10 @@ async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_E
     Parse messages from a Telegram channel and save them to a JSON file
     """
     if not await rds.get(f'{channel_name}_dt_to'):
+        await rds.set(channel_name, TgTaskStatus.free.value)
         return None
     if not await rds.get(f'{channel_name}_dt_from'):
+        await rds.set(channel_name, TgTaskStatus.free.value)
         return None
     utc_dt_to = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_to'))
     utc_dt_from = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_from'))
@@ -59,11 +54,13 @@ async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_E
 
 
         if response.status != 200:
+            await rds.set(channel_name, TgTaskStatus.free.value)
             logger.warning(f"Failed to access channel. Status code: {response.status}", extra=log_extra)
             return None
         # Get messages from the first response
         messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
         if not messages:
+            await rds.set(channel_name, TgTaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
             return None
 
@@ -81,8 +78,9 @@ async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_E
             if response.status != 200:
                 logger.warning(f"Failed to fetch messages. Status code: {response.status}", extra=log_extra)
                 break
-
-            messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from))
+            utc_dt_to = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_to'))
+            utc_dt_from = datetime.fromisoformat(await rds.get(f'{channel_name}_dt_from'))
+            messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
 
             if not messages:
                 consecutive_empty_responses += 1
@@ -108,10 +106,12 @@ async def get_channel_messages(channel_name: str, utc_dt_to: datetime = END_OF_E
             filename = f'{channel_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             save_messages_to_json(all_messages, filename)
             return all_messages
+        await rds.set(channel_name, TgTaskStatus.free.value)
         return None
 
     except Exception as e:
         logger.warning(f"Error occurred: {str(e)}", extra=log_extra)
+        await rds.set(channel_name, TgTaskStatus.free.value)
         await session.close()
         return None
 

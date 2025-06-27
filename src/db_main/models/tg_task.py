@@ -13,7 +13,9 @@ class TgTaskDbMdl(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     # props:
-    channel_id: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
+    channel_name: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
+    tg_dt_to: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=func.now(), server_default=func.now())
+    tg_dt_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=func.now(), server_default=func.now())
     status: Mapped[TgTaskStatus] = mapped_column(Enum(TgTaskStatus), nullable=False)
     task: Mapped[TgTaskEnum] = mapped_column(Enum(TgTaskEnum), nullable=False)
     # relationships:
