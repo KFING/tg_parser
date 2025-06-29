@@ -1,48 +1,11 @@
 version: '3.9'
-volumes:
-  keycloak_postgresql:
-  keycloak_postgresql_data:
-  keycloak_data:
 services:
-  keycloak_db:
-    image: postgres:15-alpine3.20
-    ports:
-      - "40432:5432"
-    environment:
-        POSTGRES_DB: keycloak_db
-        POSTGRES_USER: article_analysis
-        POSTGRES_PASSWORD: article_analysis-password
-        POSTGRES_ROOT_PASSWORD: article_analysis-password
-    volumes:
-      - keycloak_postgresql:/var/lib/postgresql
-      - keycloak_postgresql_data:/var/lib/postgresql/data
-
-  keycloak:
-    image: bitnami/keycloak:24.0.3
-    environment:
-      KEYCLOAK_ADMIN_USER: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KEYCLOAK_DATABASE_VENDOR: postgresql
-      KEYCLOAK_DATABASE_SCHEMA: public
-      KEYCLOAK_DATABASE_HOST: keycloak_db
-      KEYCLOAK_DATABASE_PORT: 5432
-      KEYCLOAK_DATABASE_NAME: keycloak_db
-      KEYCLOAK_DATABASE_USER: article_analysis
-      KEYCLOAK_DATABASE_PASSWORD: article_analysis-password
-      KEYCLOAK_EXTRA_ARGS: --import-realm
-    volumes:
-      - ./src/service_keycloak/realms:/opt/bitnami/keycloak/data/import
-      - ./src/service_keycloak/custom_theme:/opt/bitnami/keycloak/themes/mycustomtheme
-    depends_on:
-      - keycloak_db
-    ports:
-      - '40080:8080'
-
   postgres:
     image: postgres:16.3-alpine3.20
     environment:
-      POSTGRES_USER: feedrecco
-      POSTGRES_PASSWORD: feedrecco
-      POSTGRES_DB: feedrecco_db
+      POSTGRES_USER: scrapy
+      POSTGRES_PASSWORD: scrapy
+      POSTGRES_DB: scrapy_db
     ports:
-      - '40438:5432'
+      - '60438:5432'
+

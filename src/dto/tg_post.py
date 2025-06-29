@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import HttpUrl, BaseModel
+from pydantic import BaseModel, HttpUrl
 
 
 class TgPost(BaseModel):
@@ -9,4 +9,3 @@ class TgPost(BaseModel):
     content: str
     pb_date: datetime
     link: HttpUrl
-

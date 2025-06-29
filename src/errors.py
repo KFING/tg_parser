@@ -3,7 +3,6 @@ from typing import Any
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.dto.feed_rec_info import Source
 
 
 class AppError(Exception):
@@ -11,7 +10,6 @@ class AppError(Exception):
 
 
 class ScrapperError(AppError):
-    src: Source
     api_code: int = 500
 
 
@@ -48,12 +46,10 @@ def api_error_handler(_request: Request, ex: Exception) -> JSONResponse:
 
 
 class ApiResponseError(ApiError):
-    src: Source
     http_status_code: int = 500
 
 
 class ScrapperConnectionError(ApiError):
-    src: Source
     http_status_code: int = 403
 
 

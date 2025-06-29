@@ -12,7 +12,8 @@ class TgTaskStatus(Enum):
 
 
 class TgTaskEnum(Enum):
-    parse = 'parse'
+    parse = "parse"
+
 
 class TgTask(BaseModel):
     channel_name: str

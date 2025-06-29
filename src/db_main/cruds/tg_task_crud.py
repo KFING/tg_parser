@@ -1,13 +1,8 @@
-import uuid
-from collections.abc import Sequence
-from datetime import datetime
-from decimal import Decimal
-
-from sqlalchemy import null, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db_main.models.tg_task import TgTaskDbMdl
-from src.dto.tg_task import TgTaskStatus, TgTask
+from src.dto.tg_task import TgTask, TgTaskStatus
 
 
 async def create_tg_task(db: AsyncSession, tg_task: TgTask) -> TgTaskDbMdl:
@@ -24,11 +19,7 @@ async def create_tg_task(db: AsyncSession, tg_task: TgTask) -> TgTaskDbMdl:
 
 
 async def get_task_by_status(db: AsyncSession, status: TgTaskStatus) -> TgTaskDbMdl:
-    invoices = await db.execute(
-        select(TgTaskDbMdl).where(
-            (TgTaskDbMdl.status == status)
-        )
-    )
+    invoices = await db.execute(select(TgTaskDbMdl).where(TgTaskDbMdl.status == status))
     return invoices.scalars().first()
 
 

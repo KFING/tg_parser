@@ -3,7 +3,6 @@ import logging
 from fastapi import FastAPI
 
 from src.app_api.middlewares import log_extra_middleware
-
 from src.app_api.routes.tg_parser_router import tg_parser_router
 from src.errors import ApiError, api_error_handler
 

@@ -5,7 +5,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Final
 
-from pydantic import HttpUrl, PostgresDsn, SecretStr
+from pydantic import PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings
 
 ROOT_PATH = Path(__file__).parent.parent
@@ -60,33 +60,7 @@ class Settings(BaseSettings):
     CELERY_BACKEND: SecretStr = SecretStr("")
     CELERY_BROKER: SecretStr = SecretStr("")
 
-    TG_API_ID: SecretStr
-    TG_API_HASH: SecretStr
-    TG_PHONE: SecretStr
-    TG_PASSWORD: SecretStr
-
-    INSTAGRAM_USERNAME: SecretStr
-    INSTAGRAM_PASSWORD: SecretStr
-
-    KEYCLOAK_URL: HttpUrl
-    KEYCLOAK_URL_GET_CLIENT_TOKEN: HttpUrl
-    KEYCLOAK_ADMIN_REALM_NAME: str
-    KEYCLOAK_FEEDRECCO_REALM_NAME: str
-    KEYCLOAK_CLIENT_ID: str
-    KEYCLOAK_SECRET_KEY: SecretStr
-    KEYCLOAK_ADMIN_USERNAME: str
-    KEYCLOAK_ADMIN_PASSWORD: SecretStr
-
     DB_URL: PostgresDsn
-
-    PADDLE_CLIENT_SECRET_KEY: SecretStr
-    PADDLE_CLIENT_TEST_SECRET_KEY: SecretStr
-    PADDLE_TRANSACTION_PAID_NOTIFICATION_SECRET: SecretStr
-
-    CUSTOMER_SITE_ID: SecretStr
-    CUSTOMER_API_KEY: SecretStr
-
-    GOOGLE_API_KEY: SecretStr
 
     @property
     def is_local(self) -> bool:
@@ -107,8 +81,13 @@ class Settings(BaseSettings):
 # TODO: replace with right app
 settings: Final = Settings(app=AppName.app_api)  # pyright: ignore
 
-SCRAPPER_RESULTS_DIR_TELEGRAM_RAW = settings.ROOT_PATH / ".var" / "data" / "telegram" / "raw"
+db_config = {
+    "host": os.environ.get("DB_HOST"),  # localhost
+    "port": os.environ.get("DB_PORT"),  # 40438
+    "dbname": os.environ.get("DB_NAME"),  # feedrecco_db
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+}
 
-SCRAPPER_RESULTS_DIR_TELEGRAM_RAW.mkdir(exist_ok=True, parents=True)
 
 
