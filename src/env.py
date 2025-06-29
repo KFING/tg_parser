@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     ENV: AppEnv = AppEnv.PROD
     app: AppName  # must be set in constructor
 
-    SECRET_KEY: SecretStr
+    SECRET_KEY: SecretStr = SecretStr("")
 
     MAIN_DB_URL: SecretStr = SecretStr("")
     CACHE_DB_URL: SecretStr = SecretStr("")
@@ -60,7 +60,6 @@ class Settings(BaseSettings):
     CELERY_BACKEND: SecretStr = SecretStr("")
     CELERY_BROKER: SecretStr = SecretStr("")
 
-    DB_URL: PostgresDsn
 
     @property
     def is_local(self) -> bool:
@@ -89,5 +88,4 @@ db_config = {
     "password": os.environ.get("DB_PASSWORD"),
 }
 
-
-
+DB_URL = f"postgresql+asyncpg://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}"

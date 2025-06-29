@@ -8,4 +8,16 @@ services:
       POSTGRES_DB: scrapy_db
     ports:
       - '60438:5432'
-
+  scrapy:
+    build: .  # Собираем образ из Dockerfile
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - DB_HOST=localhost
+      - DB_PORT=60438
+      - DB_NAME=scrapy_db
+      - DB_USER=scrapy
+      - DB_PASSWORD=scrapy
+    ports:
+      - "50001:40001"

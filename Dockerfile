@@ -3,11 +3,14 @@ COPY pyproject.toml poetry.lock ./
 
 RUN pip install --no-cache-dir poetry
 
-RUN poetry install --no-root --no-dev
 
-WORKDIR /src
 
-COPY src/ .
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi
+
+COPY . .
+
+
 
 CMD ["uvicorn", "src.app_api.main:get_app", \
     "--timeout-graceful-shutdown", "10", \
