@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
-rds = Redis()
+rds = Redis(host='redis', port=6379)
 
 
 async def get_progress_parsing(channel_name: str, *, log_extra: dict[str, str]) -> int:
@@ -41,9 +41,7 @@ async def start_parsing(db: AsyncSession, parsing_parameters: ParsingParametersA
     )
     if not isinstance(tg_posts, list):
         return None
-    print(f"started parsing {len(tg_posts)} tg_posts")
     id_posts = await tg_post_crud.get_all_id_posts(db)
-    print(f"started parsing {len(id_posts)} id_posts")
     new_posts: list[TgPost] = []
     for tg_post in tg_posts:
         if tg_post.tg_post_id not in id_posts:

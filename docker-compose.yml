@@ -8,16 +8,32 @@ services:
       POSTGRES_DB: scrapy_db
     ports:
       - '60438:5432'
+    networks:
+      - app-network
+  redis:
+    image: redis:8.0.2-alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
   scrapy:
     build: .  # Собираем образ из Dockerfile
     restart: always
     depends_on:
       - postgres
     environment:
-      - DB_HOST=localhost
-      - DB_PORT=60438
+      - DB_HOST=postgres
+      - DB_PORT=5432
       - DB_NAME=scrapy_db
       - DB_USER=scrapy
       - DB_PASSWORD=scrapy
     ports:
       - "50001:40001"
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
-rds = Redis()
+rds = Redis(host='redis', port=6379)
 
 
 async def get_channel_messages(
