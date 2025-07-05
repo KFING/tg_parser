@@ -20,7 +20,39 @@ START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host='redis', port=6379)
 
+async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, *, log_extra) -> list[TgPost]:
+    url = f"https://t.me/s/{channel_name}/{current_id}"
 
+    response = await session.get(url)
+
+    if response.status != 200:
+        logger.warning(f"Failed to fetch messages. Status code: {response.status}", extra=log_extra)
+        return all_messages
+    dt_to = await rds.get(f"{channel_name}_dt_to")
+    dt_from = await rds.get(f"{channel_name}_dt_from")
+    utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
+    utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
+    messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
+
+    if not messages:
+        consecutive_empty_responses += 1
+        logger.warning(f"No messages found for ID {current_id}. Empty responses: {consecutive_empty_responses}", extra=log_extra)
+        if consecutive_empty_responses >= max_empty_responses:
+            logger.warning("Reached maximum number of consecutive empty responses. Stopping.", extra=log_extra)
+            return all_messages
+    else:
+        consecutive_empty_responses = 0
+        new_messages = [msg for msg in messages if msg.tg_post_id not in [m.tg_post_id for m in all_messages]]
+        all_messages.extend(new_messages)
+        logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
+        current_id = min(msg.tg_post_id for msg in messages if msg.tg_post_id is not None) - 1
+
+    if current_id <= 1:
+        logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
+        return all_messages
+
+    await asyncio.sleep(1)  # Delay to avoid hitting rate limits
+    return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
 async def get_channel_messages(
     channel_name: str, *, log_extra: dict[str, str]
 ) -> list[TgPost] | None:
@@ -67,42 +99,13 @@ async def get_channel_messages(
 
         # Continue fetching older messages
         while True:
-            url = f"https://t.me/s/{channel_name}/{current_id}"
 
-            response = await session.get(url)
-
-            if response.status != 200:
-                logger.warning(f"Failed to fetch messages. Status code: {response.status}", extra=log_extra)
-                break
-            dt_to = await rds.get(f"{channel_name}_dt_to")
-            dt_from = await rds.get(f"{channel_name}_dt_from")
-            utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
-            utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
-            messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
-
-            if not messages:
-                consecutive_empty_responses += 1
-                logger.warning(f"No messages found for ID {current_id}. Empty responses: {consecutive_empty_responses}", extra=log_extra)
-                if consecutive_empty_responses >= max_empty_responses:
-                    logger.warning("Reached maximum number of consecutive empty responses. Stopping.", extra=log_extra)
-                    break
-            else:
-                consecutive_empty_responses = 0
-                new_messages = [msg for msg in messages if msg.tg_post_id not in [m.tg_post_id for m in all_messages]]
-                all_messages.extend(new_messages)
-                logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)}", extra=log_extra)
-                current_id = min(msg.tg_post_id for msg in messages if msg.tg_post_id is not None) - 1
-
-            if current_id <= 1:
-                logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
-                break
-
-            await asyncio.sleep(1)  # Delay to avoid hitting rate limits
 
         # Save messages to file
         if all_messages:
             return all_messages
         await rds.set(channel_name, TgTaskStatus.free.value)
+        await session.close()
         return None
 
     except Exception as e:
