@@ -53,6 +53,7 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
 
     await asyncio.sleep(1)  # Delay to avoid hitting rate limits
     return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
+
 async def get_channel_messages(
     channel_name: str, *, log_extra: dict[str, str]
 ) -> list[TgPost] | None:
@@ -83,6 +84,7 @@ async def get_channel_messages(
         if response.status != 200:
             await rds.set(channel_name, TgTaskStatus.free.value)
             logger.warning(f"Failed to access channel. Status code: {response.status}", extra=log_extra)
+            await session.close()
             return None
         # Get messages from the first response
         html_text = await response.text()
@@ -90,6 +92,7 @@ async def get_channel_messages(
         if not messages:
             await rds.set(channel_name, TgTaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
+            await session.close()
             return None
 
         # Get the highest message ID as our starting point
@@ -98,14 +101,15 @@ async def get_channel_messages(
         logger.debug(f"Found initial {len(messages)} messages", extra=log_extra)
 
         # Continue fetching older messages
-        while True:
+        # while True:
+        await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
 
-
+        await session.close()
         # Save messages to file
         if all_messages:
+
             return all_messages
         await rds.set(channel_name, TgTaskStatus.free.value)
-        await session.close()
         return None
 
     except Exception as e:

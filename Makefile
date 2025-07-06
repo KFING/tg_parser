@@ -98,7 +98,7 @@ migrations-run:
 .PHONY: migrations-add
 migrations-add:
 	@ENV=test poetry run alembic revision --rev-id="rev$(NOWSTAMP)" -m "migration_manual"
-docker-compose run --rm app alembic revision --autogenerate -m "Initial"
+
 .PHONY: migrations-check
 migrations-check:
 	# This will fail if there are any changes to models that are not in migrations.
