@@ -51,7 +51,7 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
         logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
         return all_messages
 
-    await asyncio.sleep(1)  # Delay to avoid hitting rate limits
+    await asyncio.sleep(0.0001)  # Delay to avoid hitting rate limits
     return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
 
 async def get_channel_messages(

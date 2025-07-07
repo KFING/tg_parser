@@ -1,5 +1,15 @@
 version: '3.9'
 services:
+  envoy:
+    image: envoyproxy/envoy:v1.29-latest
+    volumes:
+      - ./src/service_envoy/envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "9901:9901"
+      - "10000:10000"
+    networks:
+      - app-network
+
   postgres:
     image: postgres:16.3-alpine3.20
     environment:
@@ -30,6 +40,8 @@ services:
       - DB_NAME=scrapy_db
       - DB_USER=scrapy
       - DB_PASSWORD=scrapy
+      - HTTP_PROXY=http://127.0.0.1::10000
+      - HTTPS_PROXY=http://127.0.0.1::10000
     ports:
       - "50001:40001"
     networks:
