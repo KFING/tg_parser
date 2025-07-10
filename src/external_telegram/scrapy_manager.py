@@ -33,7 +33,7 @@ async def get_progress_parsing(channel_name: str, *, log_extra: dict[str, str]) 
     return int(((utc_dt_to - utc_dt_now) * 100) / (utc_dt_to - utc_dt_from))
 
 
-async def start_parsing(db: AsyncSession, parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[TgPost] | None:
+async def start_parsing(parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[TgPost] | None:
     await rds.set(f"{parsing_parameters.channel_name}_dt_to", str(parsing_parameters.dt_to))
     await rds.set(f"{parsing_parameters.channel_name}_dt_from", str(parsing_parameters.dt_from))
     tg_posts = await telegram_scrapy.get_channel_messages(
@@ -41,14 +41,8 @@ async def start_parsing(db: AsyncSession, parsing_parameters: ParsingParametersA
     )
     if not isinstance(tg_posts, list):
         return None
-    id_posts = await tg_post_crud.get_all_id_posts(db)
-    new_posts: list[TgPost] = []
-    for tg_post in tg_posts:
-        if tg_post.tg_post_id not in id_posts:
-            new_posts.append(tg_post)
-    await tg_post_crud.create_tg_posts(db, new_posts)
     await rds.set(parsing_parameters.channel_name, TgTaskStatus.free.value)
-    return new_posts
+    return tg_posts
 
 
 async def stop_parsing(parsing_parameters: ParsingParametersApiMdl) -> None:

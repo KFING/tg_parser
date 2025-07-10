@@ -25,7 +25,7 @@ rds = Redis()
 async def start_parser(
     parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra), db: AsyncSession = Depends(get_db_main)
 ) -> list[TgPost] | None:
-    return await scrapy_manager.start_parsing(db, parsing_parameters, log_extra=log_extra)
+    return await scrapy_manager.start_parsing(parsing_parameters, log_extra=log_extra)
 
 
 @tg_parser_router.delete("/stop")

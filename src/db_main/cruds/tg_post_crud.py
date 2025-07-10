@@ -19,22 +19,16 @@ async def create_tg_post(db: AsyncSession, tg_post: TgPost) -> TgPostDbMdl:
     await db.commit()
     return post
 
-
 async def create_tg_posts(db: AsyncSession, tg_posts: list[TgPost]) -> list[TgPost]:
+    db_id_posts = await db.execute(select(TgPostDbMdl.post_id))
+    id_posts = db_id_posts.scalars().all()
+    new_posts: list[TgPost] = []
+    for tg_post in tg_posts:
+        if tg_post.tg_post_id not in id_posts:
+            new_posts.append(tg_post)
     posts: list[TgPost] = []
     for tg_post in tg_posts:
         posts.append(tg_post)
-        db.add(TgPostDbMdl(
-        post_id=tg_post.tg_post_id,
-        tg_channel_id=tg_post.tg_channel_id,
-        tg_pb_date=tg_post.pb_date,
-        content=tg_post.content,
-        link=str(tg_post.link),
-    ))
+
     await db.commit()
     return posts
-
-
-async def get_all_id_posts(db: AsyncSession) -> Sequence[int]:
-    invoices = await db.execute(select(TgPostDbMdl.post_id))
-    return invoices.scalars().all()

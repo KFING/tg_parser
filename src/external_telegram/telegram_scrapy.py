@@ -139,12 +139,12 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             date_elem = message_div.find("time", class_="time")
             utc_dt = as_utc(datetime.fromisoformat(date_elem["datetime"]) if date_elem else datetime.utcnow())
 
-            if utc_dt_to >= utc_dt:
+            if utc_dt >= utc_dt_to:
                 """logger.debug(
                     f"get_posts_list_channel({channel_name}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
                 )"""
                 continue
-            if utc_dt > utc_dt_from:
+            if utc_dt <= utc_dt_from:
                 """logger.debug(
                     f"get_posts_list_channel({channel_name}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
                 )"""
