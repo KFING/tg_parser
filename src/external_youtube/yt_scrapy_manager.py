@@ -6,11 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 from src.common.moment import as_utc
-from src.db_main.cruds import tg_post_crud
-from src.db_main.models.tg_post import TgPostDbMdl
 from src.dto.tg_post import TgPost
 from src.dto.tg_task import TgTaskStatus
-from src.external_telegram import telegram_scrapy
+from src.external_youtube import youtube_scrapy
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ async def get_progress_parsing(channel_name: str, *, log_extra: dict[str, str]) 
 async def start_parsing(parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[TgPost] | None:
     await rds.set(f"{parsing_parameters.channel_name}_dt_to", str(parsing_parameters.dt_to))
     await rds.set(f"{parsing_parameters.channel_name}_dt_from", str(parsing_parameters.dt_from))
-    tg_posts = await telegram_scrapy.get_channel_messages(
+    tg_posts = await youtube_scrapy.get_channel_messages(
         parsing_parameters.channel_name, log_extra=log_extra
     )
     if not isinstance(tg_posts, list):

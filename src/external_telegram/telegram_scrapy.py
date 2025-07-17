@@ -28,8 +28,8 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
     if response.status != 200:
         logger.warning(f"Failed to fetch messages. Status code: {response.status}", extra=log_extra)
         return all_messages
-    dt_to = await rds.get(f"{channel_name}_dt_to")
-    dt_from = await rds.get(f"{channel_name}_dt_from")
+    dt_to = await rds.get(f"tg{channel_name}_dt_to")
+    dt_from = await rds.get(f"tg{channel_name}_dt_from")
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
     utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
     messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
@@ -60,11 +60,11 @@ async def get_channel_messages(
     """
     Parse messages from a Telegram channel and save them to a JSON file
     """
-    dt_to = await rds.get(f"{channel_name}_dt_to")
+    dt_to = await rds.get(f"tg{channel_name}_dt_to")
     if not dt_to:
         await rds.set(channel_name, TgTaskStatus.free.value)
         return None
-    dt_from = await rds.get(f"{channel_name}_dt_from")
+    dt_from = await rds.get(f"tg{channel_name}_dt_from")
     if not dt_from:
         await rds.set(channel_name, TgTaskStatus.free.value)
         return None
