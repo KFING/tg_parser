@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from src.app_api.middlewares import log_extra_middleware
 from src.app_api.routes.telegram_router import tg_parser_router
+from src.app_api.routes.youtube_router import yt_parser_router
 from src.errors import ApiError, api_error_handler
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ def get_app() -> FastAPI:
 
     # routes
     app.include_router(tg_parser_router)
+    app.include_router(yt_parser_router)
 
     # middlewares
     app.middleware("http")(log_extra_middleware)
