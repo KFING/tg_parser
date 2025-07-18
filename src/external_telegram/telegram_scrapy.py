@@ -10,7 +10,9 @@ from redis.asyncio import Redis
 
 from src.common.moment import as_utc
 from src.db_main.models.tg_post import TgPostDbMdl
-from src.dto.tg_post import TgPost
+from src.dto import redis_models
+from src.dto.feed_rec_info import Source
+from src.dto.post import Post
 from src.dto.tg_task import TgTaskStatus
 
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host='redis', port=6379)
 
-async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, *, log_extra) -> list[TgPost]:
+async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, *, log_extra) -> list[Post]:
     url = f"https://t.me/s/{channel_name}/{current_id}"
 
     response = await session.get(url)
@@ -28,8 +30,8 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
     if response.status != 200:
         logger.warning(f"Failed to fetch messages. Status code: {response.status}", extra=log_extra)
         return all_messages
-    dt_to = await rds.get(f"tg{channel_name}_dt_to")
-    dt_from = await rds.get(f"tg{channel_name}_dt_from")
+    dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.TELEGRAM, channel_name))
+    dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.TELEGRAM, channel_name))
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
     utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
     messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
@@ -42,10 +44,10 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
             return all_messages
     else:
         consecutive_empty_responses = 0
-        new_messages = [msg for msg in messages if msg.tg_post_id not in [m.tg_post_id for m in all_messages]]
+        new_messages = [msg for msg in messages if msg.post_id not in [m.post_id for m in all_messages]]
         all_messages.extend(new_messages)
         logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
-        current_id = min(msg.tg_post_id for msg in messages if msg.tg_post_id is not None) - 1
+        current_id = min(msg.post_id for msg in messages if msg.post_id is not None) - 1
 
     if current_id <= 1:
         logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
@@ -54,19 +56,20 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
     await asyncio.sleep(0.0001)  # Delay to avoid hitting rate limits
     return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
 
+
 async def get_channel_messages(
     channel_name: str, *, log_extra: dict[str, str]
-) -> list[TgPost] | None:
+) -> list[Post] | None:
     """
     Parse messages from a Telegram channel and save them to a JSON file
     """
-    dt_to = await rds.get(f"tg{channel_name}_dt_to")
+    dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.TELEGRAM, channel_name))
     if not dt_to:
-        await rds.set(channel_name, TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
         return None
-    dt_from = await rds.get(f"tg{channel_name}_dt_from")
+    dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.TELEGRAM, channel_name))
     if not dt_from:
-        await rds.set(channel_name, TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
         return None
 
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
@@ -82,7 +85,7 @@ async def get_channel_messages(
         response = await session.get(url)
 
         if response.status != 200:
-            await rds.set(channel_name, TgTaskStatus.free.value)
+            await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
             logger.warning(f"Failed to access channel. Status code: {response.status}", extra=log_extra)
             await session.close()
             return None
@@ -90,13 +93,13 @@ async def get_channel_messages(
         html_text = await response.text()
         messages = extract_messages(html_text, channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
         if not messages:
-            await rds.set(channel_name, TgTaskStatus.free.value)
+            await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
             await session.close()
             return None
 
         # Get the highest message ID as our starting point
-        current_id = max(msg.tg_post_id for msg in messages if msg.tg_post_id is not None)
+        current_id = max(msg.post_id for msg in messages if msg.post_id is not None)
         all_messages.extend(messages)
         logger.debug(f"Found initial {len(messages)} messages", extra=log_extra)
 
@@ -109,22 +112,22 @@ async def get_channel_messages(
         if all_messages:
 
             return all_messages
-        await rds.set(channel_name, TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
         return None
 
     except Exception as e:
         logger.warning(f"Error occurred: {e!s}", extra=log_extra)
-        await rds.set(channel_name, TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
         await session.close()
         return None
 
 
-def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, utc_dt_from: datetime, *, log_extra: dict[str, str]) -> list[TgPost]:
+def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, utc_dt_from: datetime, *, log_extra: dict[str, str]) -> list[Post]:
     """
     Extract messages from HTML content using BeautifulSoup
     """
     soup = BeautifulSoup(html_content, "html.parser")
-    messages: list[TgPost] = []
+    messages: list[Post] = []
 
     for message_div in soup.find_all("div", class_="tgme_widget_message"):
         try:
@@ -159,12 +162,13 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             views = views_elem.get_text(strip=True) if views_elem else '0'"""
 
             # Create message object
-            message = TgPost(
-                tg_channel_id=channel_id,
-                tg_post_id=int(message_id) if message_id.isdigit() else None,
+            message = Post(
+                channel_name=channel_id,
+                post_id=int(message_id) if message_id.isdigit() else None,
                 content=text,
                 pb_date=utc_dt,
                 link=HttpUrl(f"https://t.me/{channel_name}/{message_id}"),
+                media=None
             )
 
             messages.append(message)
@@ -174,6 +178,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             continue
 
     return messages
+
 
 async def main() -> None:
     """

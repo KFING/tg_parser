@@ -14,16 +14,16 @@ class RedisNamespace(Enum):
 
 
 def source_channel_name_dt_now(source: Source, channel_name: str):
-    return f"{source}_{channel_name}_dt_now"
+    return f"{source.value}_{channel_name}_dt_now"
 
 
 def source_channel_name_dt_to(source: Source, channel_name: str):
-    return f"{source}_{channel_name}_dt_to"
+    return f"{source.value}_{channel_name}_dt_to"
 
 
 def source_channel_name_dt_from(source: Source, channel_name: str):
-    return f"{source}_{channel_name}_dt_from"
+    return f"{source.value}_{channel_name}_dt_from"
 
 
-def source_channel_name_set(source: Source, channel_name: str):
-    return f"{source}_{channel_name}_set"
+def source_channel_name_status(source: Source, channel_name: str):
+    return f"{source.value}_{channel_name}_status"
