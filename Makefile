@@ -125,65 +125,6 @@ compose-up:
 compose-down:
 	docker compose down
 
-.PHONY: cli_scrapper__get_channel_post_youtube
-cli_scrapper__get_channel_post_youtube:
-	poetry run python -m src.cli_scrapper.main get_channel_posts --source=youtube Hohmemes
-
-.PHONY: cli_scrapper__get_playlist_post_youtube
-cli_scrapper__get_playlist_post_youtube:
-	poetry run python -m src.cli_scrapper.main get_channel_posts --source=youtube PLVt7fiIBvDPEZV4cxaVT8GCdcpVCfo_a-
-
-.PHONY: cli_scrapper__download_post_youtube
-cli_scrapper__download_post_youtube:
-	poetry run python -m src.cli_scrapper.main download_post --source=youtube --description Al0fwWuuQWI
-
-.PHONY: cli_scrapper__download_post_youtube2
-cli_scrapper__download_post_youtube2:
-	poetry run python -m src.cli_scrapper.main download_post --lang=ru --source=youtube --description M_vDEmq3i78 --video_quality low --audio_quality low
-
-.PHONY: cli_scrapper__download_post_youtube2
-cli_scrapper__download_post_youtube_error:
-	poetry run python -m src.cli_scrapper.main download_post --lang=ru --source=youtube --description M_DEmq3i78 --video_quality low --audio_quality low
-
-.PHONY: cli_scrapper__download_post_youtube3
-cli_scrapper__download_post_youtube3:
-	poetry run python -m src.cli_scrapper.main download_post --lang=ru --source=youtube --description L-dCUJx1Chg --video_quality medium --audio_quality medium
-
-.PHONY: cli_scrapper__download_post_youtube_mrbeast
-cli_scrapper__download_post_youtube_mrbeast:
-	poetry run python -m src.cli_scrapper.main download_post --lang=ru --source=youtube --description QbJJwaVdgIs --video_quality medium --audio_quality medium
-
-.PHONY: cli_scrapper__download_post_youtube_strlit
-cli_scrapper__download_post_youtube_strlit:
-	poetry run python -m src.cli_scrapper.main download_post --lang=ru --source=youtube --description vIQQR_yq-8I --video_quality best --audio_quality best
-
-.PHONY: cli_scrapper__get_channel_post_instagram
-cli_scrapper__get_channel_post_instagram:
-	poetry run python -m src.cli_scrapper.main get_channel_posts --source=instagram b3r3zko
-
-.PHONY: cli_scrapper__download_post_instagram
-cli_scrapper__download_post_instagram_photos:
-	poetry run python -m src.cli_scrapper.main download_post --source=instagram --description CvNXNhwowH0 --video_quality low --image_quality low
-
-.PHONY: cli_scrapper__download_post_instagram_videos
-	poetry run python -m src.cli_scrapper.main download_post --source=instagram --description C9qIGO0ItH5 --video_quality low
-
-.PHONY: cli_scrapper__download_post_instagram
-cli_scrapper__download_post_instagram_video:
-	poetry run python -m src.cli_scrapper.main download_post --source=instagram --description C8bsLuvP1PW --video_quality low
-
-.PHONY: cli_scrapper__download_post_instagram
-cli_scrapper__download_post_instagram_photo:
-	poetry run python -m src.cli_scrapper.main download_post --source=instagram --description CfkIu0xjvtQ --video_quality low
-
-.PHONY: cli_scrapper__get_channel_post_telegram
-cli_scrapper__get_channel_post_telegram:
-	poetry run python -m src.cli_scrapper.main get_channel_posts --source=telegram mychannelkfing
-
-.PHONY: cli_scrapper__download_post_telegram
-cli_scrapper__download_post_telegram:
-	poetry run python -m src.cli_scrapper.main download_post --source=telegram --description https://t.me/mychannelkfing/36 --video_quality low
-
 .PHONY: js-compile
 js-compile:
 	node src/service_paddle/prices_paddle.js

@@ -3,7 +3,8 @@ COPY pyproject.toml poetry.lock ./
 
 RUN pip install --no-cache-dir poetry
 
-COPY . .
+COPY .env.template .env.test srv ./
+COPY src/parser_app_api src/cli_scrapper src/common src/const  src/dto src/external_youtube src/external_telegram ./
 
 RUN poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi
