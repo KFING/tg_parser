@@ -7,6 +7,7 @@ COPY .env.template .env.test srv ./
 COPY src/parser_app_api src/cli_scrapper src/common src/const  src/dto src/external_youtube src/external_telegram ./
 
 RUN poetry config virtualenvs.create false && \
+    poetry lock && \
     poetry install --no-interaction --no-ansi
 
 
