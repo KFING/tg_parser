@@ -7,11 +7,11 @@ from redis.asyncio import Redis
 from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.dto.post import Source
-from src.dto.redis_task import RedisTask
 
 logger = logging.getLogger(__name__)
 
 rds = Redis()
+
 
 async def main(*, log_extra: dict[str, str]) -> None:
     st.set_page_config(

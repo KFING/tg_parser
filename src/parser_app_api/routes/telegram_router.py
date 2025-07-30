@@ -1,16 +1,12 @@
-import asyncio
 import logging
-import time
 
 from fastapi import APIRouter, Depends
-from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app_api.middlewares import get_log_extra
-from src.app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 from src.cli_scrapper import scrapy_manager
 from src.dto.feed_rec_info import Source
 from src.dto.post import Post
+from src.parser_app_api.middlewares import get_log_extra
+from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +15,9 @@ tg_parser_router = APIRouter(
     tags=["telegram parser"],
 )
 
+
 @tg_parser_router.post("/start_telegram_parser")
-async def start_parser(
-    parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra)) -> list[Post] | None:
+async def start_parser(parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra)) -> list[Post] | None:
     return await scrapy_manager.start_parsing(Source.TELEGRAM, parsing_parameters, log_extra=log_extra)
 
 

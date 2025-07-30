@@ -4,7 +4,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 
-
 class AppError(Exception):
     api_code: int = 500
 

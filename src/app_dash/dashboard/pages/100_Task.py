@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 rds = Redis()
 mdl_name = "src.app_dash.dashboard.pages.100_Task"
 
+
 async def main(*, log_extra: dict[str, str]) -> None:
     st.set_page_config(
         page_title="TELEGRAM CHANNEL SCRAPER",
@@ -42,7 +43,6 @@ async def main(*, log_extra: dict[str, str]) -> None:
         else:
             st.write("WARNING: time period is invalid")
             return
-
 
 
 with log.scope(logger, mdl_name) as _log_extra:

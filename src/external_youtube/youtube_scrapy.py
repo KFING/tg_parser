@@ -1,38 +1,23 @@
-import asyncio
 import logging
-from asyncio import Task
 from collections.abc import AsyncIterator, Iterator
-from datetime import datetime, timedelta
-from datetime import time as dt_time
-from pathlib import Path
-from typing import cast
+from datetime import datetime
 
-import aiohttp
 from pydantic import HttpUrl
-from pytubefix import Channel, Playlist, Stream, YouTube
+from pytubefix import Channel, YouTube
 from redis.asyncio import Redis
 
-from src.common.async_utils import sync_to_async
-from src.common.moment import as_utc, utcnow
+from src.common.moment import as_utc
 from src.dto import redis_models
 from src.dto.feed_rec_info import (
-    FeedRecPostCaption,
-    FeedRecPostContent,
-    FeedRecPostFull,
-    FeedRecPostShort,
-    FeedRecPostTimeLine,
-    Lang,
     MediaFormat,
-    RawPostMedia,
     RawPostMediaExt,
     Source,
 )
 from src.dto.post import Post
 from src.errors import NotFoundChannelScrapperError, NotFoundPostScrapperError, fmt_err
 
-
 logger = logging.getLogger(__name__)
-rds = Redis(host='redis', port=6379)
+rds = Redis(host="redis", port=6379)
 
 
 class YouTubeNotFoundChannelScrapperError(NotFoundChannelScrapperError):

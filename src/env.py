@@ -5,7 +5,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Final
 
-from pydantic import PostgresDsn, SecretStr
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 ROOT_PATH = Path(__file__).parent.parent
@@ -59,7 +59,6 @@ class Settings(BaseSettings):
 
     CELERY_BACKEND: SecretStr = SecretStr("")
     CELERY_BROKER: SecretStr = SecretStr("")
-
 
     @property
     def is_local(self) -> bool:

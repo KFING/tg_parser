@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from datetime import datetime, timezone
 
@@ -9,7 +8,6 @@ from pydantic import HttpUrl
 from redis.asyncio import Redis
 
 from src.common.moment import as_utc
-from src.db_main.models.tg_post import TgPostDbMdl
 from src.dto import redis_models
 from src.dto.feed_rec_info import Source
 from src.dto.post import Post
@@ -20,7 +18,8 @@ logger = logging.getLogger(__name__)
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
-rds = Redis(host='redis', port=6379)
+rds = Redis(host="redis", port=6379)
+
 
 async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, *, log_extra) -> list[Post]:
     url = f"https://t.me/s/{channel_name}/{current_id}"
@@ -57,9 +56,7 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
     return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
 
 
-async def get_channel_messages(
-    channel_name: str, *, log_extra: dict[str, str]
-) -> list[Post] | None:
+async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) -> list[Post] | None:
     """
     Parse messages from a Telegram channel and save them to a JSON file
     """
@@ -110,7 +107,6 @@ async def get_channel_messages(
         await session.close()
         # Save messages to file
         if all_messages:
-
             return all_messages
         await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
         return None
@@ -168,7 +164,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
                 content=text,
                 pb_date=utc_dt,
                 link=HttpUrl(f"https://t.me/{channel_name}/{message_id}"),
-                media=None
+                media=None,
             )
 
             messages.append(message)

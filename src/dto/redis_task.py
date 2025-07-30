@@ -5,8 +5,9 @@ from pydantic import BaseModel
 
 
 class RedisTask(Enum):
-    channel_tasks= 'channel_tasks',
-    counter_of_workers='cow'
+    channel_tasks = ("channel_tasks",)
+    counter_of_workers = "cow"
+
 
 class Task(BaseModel):
     source: str

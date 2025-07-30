@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 rds = Redis()
 
+
 async def main(*, log_extra: dict[str, str]) -> None:
     st.set_page_config(
         page_title="TELEGRAM WORKER",

@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +17,7 @@ async def create_tg_post(db: AsyncSession, tg_post: Post) -> TgPostDbMdl:
     db.add(post)
     await db.commit()
     return post
+
 
 async def create_tg_posts(db: AsyncSession, tg_posts: list[Post]) -> list[Post]:
     db_id_posts = await db.execute(select(TgPostDbMdl.post_id))
