@@ -17,8 +17,8 @@ yt_parser_router = APIRouter(
 
 
 @yt_parser_router.post("/start_youtube_parser")
-async def start_parser(parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra)) -> list[Post] | None:
-    return await scrapy_manager.start_parsing(Source.YOUTUBE, parsing_parameters, log_extra=log_extra)
+async def start_parser(parsing_parameters: ParsingParametersApiMdl, log_extra: dict[str, str] = Depends(get_log_extra)):
+    return len(await scrapy_manager.start_parsing(Source.YOUTUBE, parsing_parameters, log_extra=log_extra))
 
 
 @yt_parser_router.delete("/stop_youtube_parser")

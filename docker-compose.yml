@@ -39,8 +39,7 @@ services:
       - DB_NAME=scrapy_db
       - DB_USER=scrapy
       - DB_PASSWORD=scrapy
-      - HTTP_PROXY=http://127.0.0.1::10000
-      - HTTPS_PROXY=http://127.0.0.1::10000
+
     ports:
       - "50001:40001"
     networks:
