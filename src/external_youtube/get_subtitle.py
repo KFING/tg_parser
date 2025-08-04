@@ -1,19 +1,12 @@
-"""from googleapiclient.discovery import build
+import json
 
-# Ваш API-ключ
-API_KEY = "AIzaSyBdw01J_cNbZE5iv26nnNeyQjzW9zKpiHk"
+import yt_dlp
 
-# ID видео, для которого нужно получить субтитры
-VIDEO_ID = "zajUgQLviwk"  # Пример ID видео
+def get_video_info(url):
+    with yt_dlp.YoutubeDL() as ydl:
+        info = ydl.extract_info(url, download=False)
+        return info
 
-# Создаем сервис
-youtube = build("youtube", "v3", developerKey=API_KEY)
-
-# Получаем список субтитров
-request = youtube.captions().list(part="snippet", videoId=VIDEO_ID)
-response = request.execute()
-
-# Выводим доступные субтитры
-for item in response["items"]:
-    print(f"Язык: {item['snippet']['language']}, ID субтитров: {item['id']}")
-"""
+data = get_video_info('''https://www.youtube.com/watch?v=Z4hVGCWH1Kc''')
+with open('video_info.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=4)

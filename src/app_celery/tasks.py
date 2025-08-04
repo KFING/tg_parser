@@ -9,7 +9,7 @@ from pydantic import BaseModel, HttpUrl
 from src.app_api.dependencies import get_db_main
 from src.app_celery.main import app
 from src.common.async_utils import run_on_loop
-from src.db_main.cruds import tg_post_crud
+from src.db_main.cruds import post_crud
 from src.dto.post import Post
 from src.env import SCRAPPER_RESULTS_DIR__TELEGRAM
 

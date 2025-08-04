@@ -14,19 +14,19 @@ from src.dto.redis_task import RedisTask
 logger = logging.getLogger(__name__)
 
 rds = Redis()
-mdl_name = "src.app_dash.dashboard.pages.100_Task"
+mdl_name = "src.app_dash.dashboard.pages.201_Settings_new"
 
 
 async def main(*, log_extra: dict[str, str]) -> None:
     st.set_page_config(
-        page_title="CHAT SETTINGS",
+        page_title="SCRAPPER NEW TASK",
         page_icon="👋",
         layout="wide",
     )
     st_no_top_borders()
 
-    st.header("CHAT SETTINGS")
-    with st.form("CHAT CONFIG"):
+    st.header("SCRAPPER NEW TASK")
+    with st.form("TASK"):
         source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
         channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
         time_period = st.date_input("Select time period", (START_OF_EPOCH, END_OF_EPOCH), START_OF_EPOCH, END_OF_EPOCH, format="MM.DD.YYYY")

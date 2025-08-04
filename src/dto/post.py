@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import unique, Enum
 
 from pydantic import BaseModel, HttpUrl
 
@@ -12,3 +13,9 @@ class Post(BaseModel):
     pb_date: datetime
     link: HttpUrl
     media: list[RawPostMediaExt] | None
+
+@unique
+class Source(Enum):
+    YOUTUBE = "youtube"
+    INSTAGRAM = "instagram"
+    TELEGRAM = "telegram"

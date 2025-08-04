@@ -31,6 +31,7 @@ class YouTubeNotFoundPostScrapperError(NotFoundPostScrapperError):
 def get_short_media_info(post: YouTube) -> list[RawPostMediaExt]:
     media: list[RawPostMediaExt] = []
     logger.info(f"********************************************************************************")
+    logger.info(f"**********************************************{len(post.streams.filter(type="video"))}**********************************")
     for quality in sorted((stream.resolution for stream in post.streams.filter(type="video")), key=lambda s: int(s.split("p")[0])):
         logger.info(f"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
         try:
