@@ -2,39 +2,30 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db_main.models.post import PostDbMdl
-from src.dto.post import Post
+from src.db_main.models.channel import ChannelDbMdl
+from src.dto.post import Post, Source, Channel
 
-async def get_posts_by_channel(db: AsyncSession, channel_id: int) -> list[PostDbMdl]:
-    posts = await db.execute(select(PostDbMdl).where(PostDbMdl.channel_id == channel_id))
-    return posts.scalars().all()
 
-async def get_post_by_(db: AsyncSession, post_id: int) -> PostDbMdl:
-    post = await db.execute(select(PostDbMdl).where(PostDbMdl.post_id == post_id))
-    return post.scalars().first()
+async def get_channels_by_source(db: AsyncSession, source: Source) -> list[ChannelDbMdl]:
+    channels = await db.execute(select(ChannelDbMdl).where(ChannelDbMdl.source == source))
+    return channels.scalars().all()
 
-async def add_post(db: AsyncSession, post: Post) -> PostDbMdl:
-    post = PostDbMdl(
-        post_id=post.post_id,
-        channel_id=post.channel_id,
-        pb_date=post.pb_date,
-        link=str(post.link),
+async def get_channel_by_id(db: AsyncSession, channel_id: int) -> ChannelDbMdl:
+    channels = await db.execute(select(ChannelDbMdl).where(ChannelDbMdl.id == channel_id))
+    return channels.scalars().first()
+
+async def add_channel(db: AsyncSession, channel: Channel) -> ChannelDbMdl:
+    channel = ChannelDbMdl(
+        source = channel.source,
+        channel_name = channel.channel_name,
+        author = channel.author,
+        created_channel_at = channel.created_channel_at,
+        description = channel.description,
+        link = channel.link,
     )
-    db.add(post)
+    db.add(channel)
     await db.commit()
-    return post
+    return channel
 
-async def create_posts(db: AsyncSession, posts: list[Post]) -> list[Post]:
-    old_posts = await get_posts_by_channel(db, posts[-1].channel_id)
-    unique_posts: list[Post] = []
-    for post in posts:
-        if post.post_id not in [old_post.id for old_post in old_posts]:
-            unique_posts.append(post)
-            db.add(PostDbMdl(post_id=post.post_id,
-                             channel_id=post.channel_id,
-                             pb_date=post.pb_date,
-                             link=str(post.link), ))
-    await db.commit()
-    return unique_posts
 
 
