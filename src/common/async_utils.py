@@ -10,7 +10,9 @@ logger: Final = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
-
+_TP = ParamSpec("_TP")
+_TR = TypeVar("_TR")
+TR = TypeVar("TR")
 
 def sync_to_async(func: Callable[_P, _T]) -> Callable[_P, Coroutine[Any, Any, _T]]:
     """Creates a coroutine from a synchronous function."""
@@ -23,7 +25,7 @@ def sync_to_async(func: Callable[_P, _T]) -> Callable[_P, Coroutine[Any, Any, _T
     return _sync_to_async
 
 
-TR = TypeVar("TR")
+
 
 
 async def run_list(tasks: list[Coroutine[None, None, TR]], size: int) -> list[TR]:
@@ -32,3 +34,16 @@ async def run_list(tasks: list[Coroutine[None, None, TR]], size: int) -> list[TR
         chunk = tasks[i * size : (i + 1) * size]
         results += list(await asyncio.gather(*chunk))
     return results
+
+
+
+def run_on_loop(some: Coroutine[Any, Any, _TR]) -> _TR:
+    try:
+        loop = asyncio.get_event_loop()
+    except Exception:
+        loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(some)
+    except RuntimeError:
+        future = asyncio.run_coroutine_threadsafe(some, loop)
+        return future.result()

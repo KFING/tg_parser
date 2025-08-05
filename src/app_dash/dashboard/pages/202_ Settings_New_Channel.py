@@ -1,0 +1,59 @@
+import asyncio
+import logging
+from datetime import datetime
+
+import streamlit as st
+from redis.asyncio import Redis
+
+from src import log
+from src.app_api.dependencies import DBM
+from src.app_dash.run_dash_page import run_dash_page
+from src.app_dash.utils.streamlit import st_no_top_borders
+from src.cli_scrapper import scrapy_manager
+from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
+from src.db_main.cruds import channel_crud
+from src.dto.scrappy_models import Source, Channel
+from src.dto.redis_task import RedisTask
+
+logger = logging.getLogger(__name__)
+
+rds = Redis()
+mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Task"
+
+
+async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
+    st.set_page_config(
+        page_title="SCRAPPER NEW TASK",
+        page_icon="👋",
+        layout="wide",
+    )
+    st_no_top_borders()
+
+    st.header("SCRAPPER NEW TASK")
+    default_source = st.query_params.get("source", "")
+    with st.form("TASK"):
+        match default_source:
+            case Source.YOUTUBE.value:
+                source = Source.YOUTUBE
+            case Source.TELEGRAM.value:
+                source = Source.TELEGRAM
+            case _:
+                source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
+        channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
+        if not st.form_submit_button("ADD"):
+            return
+
+    with st.spinner("wait few seconds..."):
+        channel = await scrapy_manager.get_channel_info(source, channel_name)
+        if not isinstance(channel, Channel):
+            return
+        async with dbm.session() as session:
+            await channel_crud.add_channel(session, Channel(source=channel.source,
+                                                            channel_name=channel.channel_name,
+                                                            author=channel.author,
+                                                            created_channel_at=channel.created_channel_at,
+                                                            description=channel.description,
+                                                            link=channel.link))
+
+
+run_dash_page(mdl_name, main)

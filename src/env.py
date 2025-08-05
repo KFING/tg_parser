@@ -79,6 +79,14 @@ class Settings(BaseSettings):
 # TODO: replace with right app
 settings: Final = Settings(app=AppName.app_api)  # pyright: ignore
 
+SCRAPPER_RESULTS_DIR__YOUTUBE = settings.ROOT_PATH / ".var" / "data" / "youtube"
+SCRAPPER_RESULTS_DIR__INSTAGRAM = settings.ROOT_PATH / ".var" / "data" / "instagram"
+SCRAPPER_RESULTS_DIR__TELEGRAM = settings.ROOT_PATH / ".var" / "data" / "telegram"
+
+SCRAPPER_RESULTS_DIR__YOUTUBE.mkdir(exist_ok=True, parents=True)
+SCRAPPER_RESULTS_DIR__INSTAGRAM.mkdir(exist_ok=True, parents=True)
+SCRAPPER_RESULTS_DIR__TELEGRAM.mkdir(exist_ok=True, parents=True)
+
 db_config = {
     "host": os.environ.get("DB_HOST"),  # localhost
     "port": os.environ.get("DB_PORT"),  # 40438

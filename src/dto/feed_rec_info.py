@@ -83,3 +83,39 @@ class FeedRecPostContent(BaseModel):
 
 class FeedRecPostFull(FeedRecPostShort, frozen=True, extra="forbid"):
     contents: list[FeedRecPostContent]
+
+
+class Channel(BaseModel):
+    source: Source
+    channel_name: str
+    author: str
+    created_channel_at: datetime
+    description: str
+    link: str
+
+
+class Post(BaseModel):
+    channel_name: str
+    post_id: str
+    content: str
+    pb_date: datetime
+    link: HttpUrl
+    media: list[RawPostMediaExt] | None
+
+
+class Task(BaseModel):
+    source: str
+    channel_name: str
+    dt_to: datetime
+    dt_from: datetime
+
+
+class TaskEnum(Enum):
+    parse = "parse"
+
+
+class TaskStatus(Enum):
+    completed = "completed"
+    failed = "failed"
+    processing = "processing"
+    free = "free"

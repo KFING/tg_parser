@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
-from src.dto.post import Source
+from src.dto.scrappy_models import Source
 from src.dto.redis_task import RedisTask
 
 logger = logging.getLogger(__name__)

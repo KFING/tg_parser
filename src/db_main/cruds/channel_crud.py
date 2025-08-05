@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db_main.models.channel import ChannelDbMdl
-from src.dto.post import Post, Source, Channel
+from src.dto.scrappy_models import Post, Source, Channel
 
 async def get_channel_by_source_by_channel_name(db: AsyncSession, source: Source, channel_name: str):
     channel = await db.execute(select(ChannelDbMdl).where((ChannelDbMdl.source == source) and (ChannelDbMdl.channel_name == channel_name)))

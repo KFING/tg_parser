@@ -13,7 +13,7 @@ from src.dto.feed_rec_info import (
     RawPostMediaExt,
     Source,
 )
-from src.dto.post import Post
+from src.dto.scrappy_models import Post
 from src.errors import NotFoundChannelScrapperError, NotFoundPostScrapperError, fmt_err
 
 logger = logging.getLogger(__name__)

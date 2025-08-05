@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 from src.common.moment import as_utc
 from src.dto import redis_models
 from src.dto.feed_rec_info import Source
-from src.dto.post import Post
+from src.dto.scrappy_models import Post
 from src.dto.tg_task import TgTaskStatus
 
 logger = logging.getLogger(__name__)

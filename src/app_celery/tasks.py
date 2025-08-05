@@ -6,12 +6,12 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, HttpUrl
 
-from src.app_api.dependencies import get_db_main
+from src.app_api.dependencies import get_db_main, get_db_main_for_celery
 from src.app_celery.main import app
 from src.common.async_utils import run_on_loop
 from src.db_main.cruds import post_crud
-from src.dto.post import Post
-from src.env import SCRAPPER_RESULTS_DIR__TELEGRAM
+from src.db_main.models.post import PostDbMdl
+from src.dto.feed_rec_info import Post
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,12 @@ def parse_data(channel_name: str, posts: list[dict[str, str]]) -> list[Post]:
             tg_posts.append(
                 Post(
                     channel_name=post["channel_name"],
-                    post_id=int(post["post_id"]),
+                    post_id=post["post_id"],
                     content=post["content"],
                     pb_date=datetime.fromisoformat(post["pb_date"]),
                     link=HttpUrl(post["link"]),
-                    media=post["media"],
+                    #media=post["media"],
+                    media=None,
                 )
             )
     except InvalidDataException as e:
@@ -43,7 +44,7 @@ def parse_data(channel_name: str, posts: list[dict[str, str]]) -> list[Post]:
     return tg_posts
 
 
-def heapify(arr: list[Post], n: int, i: int):
+def heapify(arr: list[PostDbMdl], n: int, i: int):
     largest = i  # Initialize largest as root
     l = 2 * i + 1  # left = 2*i + 1
     r = 2 * i + 2  # right = 2*i + 2
@@ -66,8 +67,7 @@ def heapify(arr: list[Post], n: int, i: int):
         heapify(arr, n, largest)
 
 
-# Основная функция для сортировки массива заданного размера
-def heap_sort(arr: list[Post]):
+def heap_sort(arr: list[PostDbMdl]):
     n = len(arr)
 
     # Построение max-heap.
@@ -80,9 +80,9 @@ def heap_sort(arr: list[Post]):
         heapify(arr, i, 0)
 
 
-def _save_to_file(tmp_post, tmp_posts):
+def _save_to_file(tmp_post, tmp_posts: PostDbMdl):
     tmp = ""
-    scrapper_path: Path = SCRAPPER_RESULTS_DIR__TELEGRAM / tmp_post.channel_tasks / f"{tmp_post.pb_date.year}"
+    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_tasks / f"{tmp_post.pb_date.year}"
     if (scrapper_path / f"{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json").exists():
         text = json.load((scrapper_path / f"{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json").open())
         text_posts = text["posts"]
@@ -98,9 +98,9 @@ def _save_to_file(tmp_post, tmp_posts):
         )
 
 
-def save_to_telegram_file(posts: list[Post]) -> None:
+def save_to_telegram_file(posts: list[PostDbMdl]) -> None:
     heap_sort(posts)
-    tmp_posts: list[Post] = []
+    tmp_posts: list[PostDbMdl] = []
     for post in posts:
         try:
             tmp_post = tmp_posts[-1]
@@ -131,7 +131,7 @@ def parse_api(self, channel_name, task) -> None:
     if not isinstance(text, list):
         logger.debug(f"noooooooooooooooooooooooooooooooooooo -- {text}")
         return
-    tg_posts = parse_data(channel_name, text)
-    db = run_on_loop(get_db_main())
-    posts = run_on_loop(tg_post_crud.create_posts(db, tg_posts))
+    posts = parse_data(channel_name, text)
+    db = run_on_loop(get_db_main_for_celery())
+    posts = run_on_loop(post_crud.create_posts(db, posts))
     save_to_telegram_file(posts)

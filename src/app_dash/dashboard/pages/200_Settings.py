@@ -11,7 +11,7 @@ from src.app_dash.run_dash_page import run_dash_page
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
 from src.db_main.cruds import post_crud, channel_crud
-from src.dto.post import Source
+from src.dto.scrappy_models import Source
 from src.dto.redis_task import RedisTask
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     st.header("CHAT SETTINGS")
     src_col, channel_col, button_col = st.columns((0.45,0.45, 0.1))
     source = src_col.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
+
     if not isinstance(source, Source):
         return
     async with dbm.session() as session:
@@ -38,7 +39,13 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
             channels = await channel_crud.get_channels_by_source(session, source)
         channel_col.markdown(
             f"""
-                        <a href="/Settings_New?source={source}">add new</a>
+                                <a href="/Settings_New?source={source}">add time period</a>
+                            """,
+            unsafe_allow_html=True,
+        )
+        channel_col.markdown(
+            f"""
+                        <a href="/Settings_New?source={source}">add time period</a>
                     """,
             unsafe_allow_html=True,
         )

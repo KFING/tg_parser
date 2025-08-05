@@ -7,7 +7,7 @@ from src.parser_app_api.models.request_models.feed_rec_request_info import Parsi
 from src.common.moment import as_utc
 from src.dto import redis_models
 from src.dto.feed_rec_info import Source
-from src.dto.post import Post
+from src.dto.scrappy_models import Post, Channel
 from src.dto.tg_task import TgTaskStatus
 from src.external_telegram import telegram_scrapy
 from src.external_youtube import youtube_scrapy
@@ -19,6 +19,13 @@ START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host="redis", port=6379)
 
+
+async def get_channel_info(source: Source, channel_name: str) -> Channel | None:
+    match source:
+        case Source.YOUTUBE:
+            pass
+        case Source.TELEGRAM:
+            pass
 
 async def get_progress_parsing(source: Source, channel_name: str, *, log_extra: dict[str, str]) -> int:
     dt_to = await rds.get(redis_models.source_channel_name_dt_to(source, channel_name))

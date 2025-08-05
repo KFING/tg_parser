@@ -11,13 +11,13 @@ from src.app_dash.run_dash_page import run_dash_page
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
 from src.db_main.cruds import channel_crud, post_crud
-from src.dto.post import Source
+from src.dto.scrappy_models import Source
 from src.dto.redis_task import RedisTask
 
 logger = logging.getLogger(__name__)
 
 rds = Redis()
-mdl_name = "src.app_dash.dashboard.pages.202_Settings_About"
+mdl_name = "src.app_dash.dashboard.pages.203_Settings_About"
 
 
 async def main(dbm: DBM, log_extra: dict[str, str]) -> None:

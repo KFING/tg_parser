@@ -3,6 +3,11 @@ from enum import Enum
 from src.dto.feed_rec_info import Source
 
 
+class RedisTask(Enum):
+    channel_tasks = ("channel_tasks",)
+    counter_of_workers = "cow"
+
+
 class RedisChannels(Enum):
     TG_PARSER = "tg_parser"
     TG_TASKS = "tg_tasks"
