@@ -20,7 +20,7 @@ rds = Redis()
 mdl_name = "src.app_dash.dashboard.pages.200_Settings"
 
 
-async def main(dbm: DBM, *, log_extra: dict[str, str]) -> None:
+async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     st.set_page_config(
         page_title="CHAT SETTINGS",
         page_icon="👋",
@@ -35,18 +35,18 @@ async def main(dbm: DBM, *, log_extra: dict[str, str]) -> None:
         return
     async with dbm.session() as session:
         with st.spinner("wait few seconds..."):
-            channels = channel_crud.get_channels_by_source(session, source)
+            channels = await channel_crud.get_channels_by_source(session, source)
         channel_col.markdown(
             f"""
                         <a href="/Settings_New?source={source}">add new</a>
                     """,
             unsafe_allow_html=True,
         )
-        for post in posts:
-            channel_col.write(f"CHANNEL NAME: {post.channel_name}", divider="red")
+        for channel in channels:
+            channel_col.write(f"CHANNEL NAME: {channel.channel_name}", divider="red")
             button_col.markdown(
                 f"""
-                    <a href="/Settings_About?source={source}&channel={post.channel_name}">about it</a>
+                    <a href="/Settings_About?source={source}&channel={channel.channel_name}">about it</a>
                 """,
                 unsafe_allow_html=True,
             )

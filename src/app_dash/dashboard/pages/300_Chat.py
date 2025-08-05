@@ -13,7 +13,7 @@ rds = Redis()
 mdl_name = "src.app_dash.dashboard.pages.100_Task"
 
 
-async def main(*, log_extra: dict[str, str]) -> None:
+async def main(log_extra: dict[str, str]) -> None:
     st.set_page_config(
         page_title="CHAT WITH CONTENT CREATORS",
         page_icon="👋",

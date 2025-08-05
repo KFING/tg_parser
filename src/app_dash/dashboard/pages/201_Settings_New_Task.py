@@ -19,7 +19,7 @@ rds = Redis()
 mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Task"
 
 
-async def main(dbm: DBM, *, log_extra: dict[str, str]) -> None:
+async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     st.set_page_config(
         page_title="SCRAPPER NEW TASK",
         page_icon="👋",
@@ -34,6 +34,7 @@ async def main(dbm: DBM, *, log_extra: dict[str, str]) -> None:
         time_period = st.date_input("Select time period", (START_OF_EPOCH, END_OF_EPOCH), START_OF_EPOCH, END_OF_EPOCH, format="MM.DD.YYYY")
         if not st.form_submit_button("CREATE"):
             return
+    default_source = st.query_params.get("source", "")
     with st.spinner("wait few seconds..."):
         if isinstance(time_period, tuple) and len(time_period) == 2:
             start_of_epoch = datetime(time_period[0].year, time_period[0].month, time_period[0].day)

@@ -20,7 +20,7 @@ rds = Redis()
 mdl_name = "src.app_dash.dashboard.pages.202_Settings_About"
 
 
-async def main(dbm: DBM, *, log_extra: dict[str, str]) -> None:
+async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     st.set_page_config(
         page_title="ABOUT CHANNEL",
         page_icon="👋",
@@ -29,11 +29,21 @@ async def main(dbm: DBM, *, log_extra: dict[str, str]) -> None:
     st_no_top_borders()
 
     st.header("ABOUT CHANNEL")
-    with st.form("ABOUT"):
-        source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
-        channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
-        if not st.form_submit_button("find"):
-            return
+    default_source = st.query_params.get("source", "")
+    default_channel_name = st.query_params.get("channel_name", "")
+    if (not default_source) or (not default_channel_name):
+        with st.form("ABOUT"):
+            source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
+            channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
+            if not st.form_submit_button("find"):
+                return
+    else:
+        match default_source:
+            case Source.YOUTUBE.value:
+                source = Source.YOUTUBE
+            case Source.TELEGRAM.value:
+                source = Source.TELEGRAM
+        channel_name = default_channel_name
     async with dbm.session() as session:
         channel = await channel_crud.get_channel_by_source_by_channel_name(session, source, channel_name)
         posts = await post_crud.get_posts_by_channel(session, channel.id)
