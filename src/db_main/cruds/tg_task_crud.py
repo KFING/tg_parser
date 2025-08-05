@@ -1,7 +1,7 @@
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db_main.models.tg_task import TgTaskDbMdl
+from src.db_main.models.task import TgTaskDbMdl
 from src.dto.tg_task import TgTask, TgTaskStatus
 
 

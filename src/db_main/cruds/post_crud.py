@@ -2,7 +2,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db_main.models.tg_post import TgPostDbMdl
+from src.db_main.models.post import TgPostDbMdl
 from src.dto.post import Post
 
 

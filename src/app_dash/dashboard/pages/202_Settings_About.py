@@ -31,9 +31,10 @@ async def main(*, log_extra: dict[str, str]) -> None:
         channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
         if not st.form_submit_button("find"):
             return
+
     description = ""
     author = ""
-    count  = 0
+    count = 0
     with st.spinner("wait few seconds..."):
         st.write(f"description: {description}")
         st.write(f"author: {author}")

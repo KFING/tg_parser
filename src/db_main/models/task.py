@@ -7,8 +7,8 @@ from src.db_main.database import Base
 from src.dto.tg_task import TgTaskEnum, TgTaskStatus
 
 
-class TgTaskDbMdl(Base):
-    __tablename__ = "tg_tasks"
+class TaskDbMdl(Base):
+    __tablename__ = "tasks"
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
