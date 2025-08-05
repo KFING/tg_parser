@@ -1,10 +1,12 @@
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db_main.models.channel import ChannelDbMdl
 from src.dto.post import Post, Source, Channel
 
+async def get_channel_by_source_by_channel_name(db: AsyncSession, source: Source, channel_name: str):
+    channel = await db.execute(select(ChannelDbMdl).where((ChannelDbMdl.source == source) and (ChannelDbMdl.channel_name == channel_name)))
+    return channel.scalar().first()
 
 async def get_channels_by_source(db: AsyncSession, source: Source) -> list[ChannelDbMdl]:
     channels = await db.execute(select(ChannelDbMdl).where(ChannelDbMdl.source == source))
