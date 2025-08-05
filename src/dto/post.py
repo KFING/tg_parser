@@ -7,8 +7,8 @@ from src.dto.feed_rec_info import RawPostMediaExt
 
 
 class Post(BaseModel):
-    channel_name: str
-    post_id: int
+    channel_id: int
+    post_id: str
     content: str
     pb_date: datetime
     link: HttpUrl

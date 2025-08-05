@@ -133,5 +133,5 @@ def parse_api(self, channel_name, task) -> None:
         return
     tg_posts = parse_data(channel_name, text)
     db = run_on_loop(get_db_main())
-    posts = run_on_loop(tg_post_crud.create_tg_posts(db, tg_posts))
+    posts = run_on_loop(tg_post_crud.create_posts(db, tg_posts))
     save_to_telegram_file(posts)

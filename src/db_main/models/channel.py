@@ -15,7 +15,6 @@ class ChannelDbMdl(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     # props:
     source: Mapped[Source] = mapped_column(Enum(Source), nullable=False)
-    channel_id: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     channel_name: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     author: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     created_channel_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
