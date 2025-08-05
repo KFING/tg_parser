@@ -5,30 +5,36 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db_main.models.post import PostDbMdl
 from src.dto.post import Post
 
+async def get_posts_by_channel(db: AsyncSession, channel_id: int) -> list[PostDbMdl]:
+    posts = await db.execute(select(PostDbMdl).where(PostDbMdl.channel_id == channel_id))
+    return posts.scalars().all()
 
-async def create_tg_post(db: AsyncSession, tg_post: Post) -> PostDbMdl:
+async def get_post_by_(db: AsyncSession, post_id: int) -> PostDbMdl:
+    post = await db.execute(select(PostDbMdl).where(PostDbMdl.post_id == post_id))
+    return post.scalars().first()
+
+async def add_post(db: AsyncSession, post: Post) -> PostDbMdl:
     post = PostDbMdl(
-        post_id=tg_post.post_id,
-        tg_channel_id=tg_post.channel_name,
-        tg_pb_date=tg_post.tg_pb_date,
-        content=tg_post.content,
-        link=str(tg_post.link),
+        post_id=post.post_id,
+        channel_id=post.channel_id,
+        pb_date=post.pb_date,
+        link=str(post.link),
     )
     db.add(post)
     await db.commit()
     return post
 
-
-async def create_posts(db: AsyncSession, tg_posts: list[Post]) -> list[Post]:
-    db_id_posts = await db.execute(select(PostDbMdl.post_id))
-    id_posts = db_id_posts.scalars().all()
-    new_posts: list[Post] = []
-    for tg_post in tg_posts:
-        if tg_post.post_id not in id_posts:
-            new_posts.append(tg_post)
-    posts: list[Post] = []
-    for tg_post in tg_posts:
-        posts.append(tg_post)
-
+async def create_posts(db: AsyncSession, posts: list[Post]) -> list[Post]:
+    old_posts = await get_posts_by_channel(db, posts[-1].channel_id)
+    unique_posts: list[Post] = []
+    for post in posts:
+        if post.post_id not in [old_post.id for old_post in old_posts]:
+            unique_posts.append(post)
+            db.add(PostDbMdl(post_id=post.post_id,
+                             channel_id=post.channel_id,
+                             pb_date=post.pb_date,
+                             link=str(post.link), ))
     await db.commit()
-    return posts
+    return unique_posts
+
+
