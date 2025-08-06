@@ -6,7 +6,8 @@ from redis import Redis
 
 from src.app_celery.main import app
 from src.app_celery.tasks import parse_api
-from src.dto.redis_task import RedisTask, Task
+from src.dto.feed_rec_info import Task
+from src.dto.redis_models import RedisTask
 
 rds = Redis()
 rds.set(str(RedisTask.counter_of_workers.value), 3)
