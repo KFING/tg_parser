@@ -9,7 +9,7 @@ def get_video_info(url):
         info = ydl.extract_info(url, download=False)
         return info
 
-data = get_video_info('''https://www.youtube.com/watch?v=GAeB5jpYokk''')
+data = get_video_info('''https://www.youtube.com/@jp-f6s''')
 print(type(data))
-with open('video_info_no_beast.json', 'w', encoding='utf-8') as f:
+with open('channel_info.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
