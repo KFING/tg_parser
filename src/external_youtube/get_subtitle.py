@@ -1,15 +1,48 @@
-import json
+import subprocess
+from datetime import datetime
 
-import yt_dlp
+# === Настройки ===
+channels = [
+    "https://www.youtube.com/@jp-f6s",
+    # Добавь сюда сколько угодно каналов
+]
 
-# def parse_yt_dlp_data_about_video(data: dict[str, str]):
+# Укажи временной промежуток
+date_start = "20250710"  # формат YYYYMMDD
+date_end = "20250713"    # формат YYYYMMDD
 
-def get_video_info(url):
-    with yt_dlp.YoutubeDL() as ydl:
-        info = ydl.extract_info(url, download=False)
-        return info
+# Путь к лог-файлу
+log_file = "yt_download_log.txt"
 
-data = get_video_info('''https://www.youtube.com/@jp-f6s''')
-print(type(data))
-with open('channel_info.json', 'w', encoding='utf-8') as f:
-    json.dump(data, f, ensure_ascii=False, indent=4)
+
+def download_videos(channel_url, start_date, end_date):
+    print(f"📥 Загрузка видео с канала: {channel_url}")
+    command = [
+        "yt-dlp",
+        "--dateafter", start_date,
+        "--datebefore", end_date,
+        "--output", "%(uploader)s/%(upload_date)s_%(title)s.%(ext)s",
+        "--yes-playlist",  # если это плейлист, скачает весь
+        channel_url
+    ]
+
+    try:
+        result = subprocess.run(command, text=True, capture_output=True)
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"\n[{datetime.now()}] Канал: {channel_url}\n")
+            f.write(result.stdout)
+            f.write(result.stderr)
+        print("✅ Завершено\n")
+    except Exception as e:
+        print(f"❌ Ошибка при загрузке: {e}")
+
+
+def main():
+    print("=== Старт загрузки видео ===\n")
+    for channel in channels:
+        download_videos(channel, date_start, date_end)
+    print("=== Все загрузки завершены ===")
+
+
+if __name__ == "__main__":
+    main()
