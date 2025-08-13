@@ -9,9 +9,7 @@ from redis.asyncio import Redis
 
 from src.common.moment import as_utc
 from src.dto import redis_models
-from src.dto.feed_rec_info import Source
-from src.dto.scrappy_models import Post
-from src.dto.tg_task import TgTaskStatus
+from src.dto.feed_rec_info import Source, TaskStatus, Post
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +60,11 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
     """
     dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.TELEGRAM, channel_name))
     if not dt_to:
-        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
         return None
     dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.TELEGRAM, channel_name))
     if not dt_from:
-        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
         return None
 
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
@@ -82,7 +80,7 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
         response = await session.get(url)
 
         if response.status != 200:
-            await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
+            await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
             logger.warning(f"Failed to access channel. Status code: {response.status}", extra=log_extra)
             await session.close()
             return None
@@ -90,7 +88,7 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
         html_text = await response.text()
         messages = extract_messages(html_text, channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
         if not messages:
-            await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
+            await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
             await session.close()
             return None
@@ -108,12 +106,12 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
         # Save messages to file
         if all_messages:
             return all_messages
-        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
         return None
 
     except Exception as e:
         logger.warning(f"Error occurred: {e!s}", extra=log_extra)
-        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TgTaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
         await session.close()
         return None
 
@@ -160,7 +158,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             # Create message object
             message = Post(
                 channel_name=channel_id,
-                post_id=int(message_id) if message_id.isdigit() else None,
+                post_id=str(int(message_id) if message_id.isdigit() else None),
                 content=text,
                 pb_date=utc_dt,
                 link=HttpUrl(f"https://t.me/{channel_name}/{message_id}"),

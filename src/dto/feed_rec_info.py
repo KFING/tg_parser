@@ -88,14 +88,14 @@ class FeedRecPostFull(FeedRecPostShort, frozen=True, extra="forbid"):
 class Channel(BaseModel):
     source: Source
     channel_name: str
-    author: str
-    created_channel_at: datetime
+    channel_id: str
     description: str
-    link: str
+    link: HttpUrl
 
 
 class Post(BaseModel):
     channel_name: str
+    title: str | None = None
     post_id: str
     content: str
     pb_date: datetime

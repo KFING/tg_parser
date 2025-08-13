@@ -1,4 +1,4 @@
-from enum import Enum
+"""from enum import Enum
 
 from pydantic import BaseModel, HttpUrl
 
@@ -9,21 +9,18 @@ class AudioExt(Enum):
     webm = 'webm'
     mp4 = 'mp4'
 
-class YtFormat(BaseModel):
+class Format(BaseModel):
     format_id: str
     audio_ext: AudioExt
     video_ext: VideoExt
     url: HttpUrl
-    manifest_url: HttpUrl
 
-class Entry(BaseModel):
+class Post(BaseModel):
     id: str
-    channel_id: str
+    channel_name: str
     full_title: str
     description: str
-    age_limit: int
-    live_status: str
-    formats: list[YtFormat]
+    formats: list[Format]
 
 class Channel(BaseModel):
     id: str
@@ -31,4 +28,4 @@ class Channel(BaseModel):
     title: str
     description: str
     uploader_id: str
-    entries: list[Entry]
+    entries: list[Post]"""
