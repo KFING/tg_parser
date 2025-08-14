@@ -21,6 +21,7 @@ class Lang(Enum):
 class MediaFormat(StrEnum):
     MP3 = "mp3"
     MP4 = "mp4"
+    WEBM = "webm"
     JPG = "jpg"
     JPEG = "jpeg"
     PNG = "png"
