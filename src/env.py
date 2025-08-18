@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     CELERY_BACKEND: SecretStr = SecretStr("")
     CELERY_BROKER: SecretStr = SecretStr("")
 
+    DEEP_SEEK_API_KEY: SecretStr = SecretStr("")
+
     @property
     def is_local(self) -> bool:
         return self.ENV == AppEnv.LOCAL

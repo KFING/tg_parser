@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends
 
 from src.cli_scrapper import scrapy_manager
 from src.dto.feed_rec_info import Source
-from src.dto.scrappy_models import Post
 from src.parser_app_api.middlewares import get_log_extra
 from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 

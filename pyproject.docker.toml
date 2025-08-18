@@ -43,6 +43,7 @@ python-dateutil = "^2.9.0"
 disposable-email-domains = "^0.0.104"
 pytubefix = "^6.7.0"
 beautifulsoup4 = "^4.13.4"
+yt-dlp = "^2025.7.21"
 # lint
 ruff = "^0.5.5"
 vulture = "^2.11"
