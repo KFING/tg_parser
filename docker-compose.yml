@@ -44,6 +44,13 @@ services:
       - "50001:40001"
     networks:
       - app-network
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333" # REST API
+      - "6334:6334" # GRPC API
+    volumes:
+      - ./qdrant_data:/qdrant/storage # Mount a volume for data persistence
 networks:
   app-network:
     driver: bridge

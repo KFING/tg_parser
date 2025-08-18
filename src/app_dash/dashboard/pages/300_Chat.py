@@ -23,9 +23,10 @@ async def main(log_extra: dict[str, str]) -> None:
 
     st.header("CHAT WITH CONTENT CREATORS")
     with st.form("CHAT"):
-        messsage = st.text_input("message", help="message for ai person")
+        messsage = st.chat_input("message", help="message for ai person")
         if not st.form_submit_button("send"):
             return
+        st.write(f'U: {messsage}')
 
 
 with log.scope(logger, mdl_name) as _log_extra:
