@@ -1,5 +1,4 @@
 FROM python:3.12 AS builder
-COPY pyproject.toml poetry.lock ./
 
 COPY pyproject.docker.toml ./pyproject.toml
 
