@@ -84,10 +84,8 @@ pyperclip = "^1.9.0"
 requests = "^2.32.4"
 yt-dlp = "^2025.7.21"
 langchain = "^0.3.27"
-<<<<<<< Updated upstream
 qdrant-client = "^1.15.1"
-=======
->>>>>>> Stashed changes
+
 
 
 [build-system]

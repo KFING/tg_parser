@@ -1,14 +1,18 @@
 from langchain.embeddings import CacheBackedEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import TextLoader
+from langchain.chains import RetrievalQA
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.vectorstores import Qdrant
+from langchain.vectorstores.base import VectorStoreRetriever
 from langchain.storage import RedisStore
 from langchain.embeddings import OpenAIEmbeddings
+from qdrant_client import QdrantClient
 
+from src.env import settings
 
 store = RedisStore(redis_url=CACHE_DB_URL, client_kwargs={'db': 2}, namespace='embedding_caches')
 
-underlying_embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+underlying_embeddings = OpenAIEmbeddings(openai_api_key=settings.DEEP_SEEK_API_KEY.get_secret_value())
 
 embedder = CacheBackedEmbeddings.from_bytes_store(
     underlying_embeddings,
@@ -25,7 +29,7 @@ doc_store = Qdrant(
     embeddings=embedder,
 )
 
-llm = OpenAI(openai_api_key=OPENAI_API_KEY, temperature=0)
+llm = OpenAI(openai_api_key=settings.DEEP_SEEK_API_KEY.get_secret_value(), temperature=0)
 
 retriever = VectorStoreRetriever(vectorstore=doc_store)
 
