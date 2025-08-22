@@ -5,7 +5,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Final
 
-from pydantic import SecretStr
+from pydantic import SecretStr, HttpUrl
 from pydantic_settings import BaseSettings
 
 ROOT_PATH = Path(__file__).parent.parent
@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     CELERY_BROKER: SecretStr = SecretStr("")
 
     DEEP_SEEK_API_KEY: SecretStr = SecretStr("")
+
+    QDRANT_URL: HttpUrl
+    CACHE_DB_URL: str
 
     @property
     def is_local(self) -> bool:
