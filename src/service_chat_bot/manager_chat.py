@@ -65,7 +65,7 @@ def file_loader_init():
 def initialize():
     store = RedisStore(redis_url=settings.CACHE_DB_URL, client_kwargs={'db': 2}, namespace='embedding_caches')
 
-    # underlying_embeddings = OpenAIEmbeddings(openai_api_key=str("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"))
+
     underlying_embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )

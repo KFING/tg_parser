@@ -3,9 +3,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db_main.models.post import PostDbMdl
-from src.dto.scrappy_models import Post
+from src.dto.feed_rec_info import Post
 
-async def get_posts_by_channel(db: AsyncSession, channel_id: int) -> list[PostDbMdl]:
+
+async def get_posts_by_channel_id(db: AsyncSession, channel_id: str) -> list[PostDbMdl]:
     posts = await db.execute(select(PostDbMdl).where(PostDbMdl.channel_id == channel_id))
     return posts.scalars().all()
 
@@ -25,15 +26,15 @@ async def add_post(db: AsyncSession, post: Post) -> PostDbMdl:
     return post
 
 async def create_posts(db: AsyncSession, posts: list[Post]) -> list[PostDbMdl]:
-    old_posts = await get_posts_by_channel(db, posts[-1].channel_name)
-    unique_posts: list[Post] = []
+    old_posts = await get_posts_by_channel_id(db, posts[-1].channel_name)
+    unique_posts: list[PostDbMdl] = []
     for post in posts:
         if post.post_id not in [old_post.id for old_post in old_posts]:
-            unique_posts.append(post)
-            db.add(PostDbMdl(post_id=post.post_id,
+            unique_posts.append(PostDbMdl(post_id=post.post_id,
                              channel_id=post.channel_name,
                              pb_date=post.pb_date,
                              link=str(post.link), ))
+            db.add(unique_posts[-1])
     await db.commit()
     return unique_posts
 

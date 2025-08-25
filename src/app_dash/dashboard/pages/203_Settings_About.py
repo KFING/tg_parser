@@ -46,7 +46,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
         channel_name = default_channel_name
     async with dbm.session() as session:
         channel = await channel_crud.get_channel_by_source_by_channel_name(session, source, channel_name)
-        posts = await post_crud.get_posts_by_channel(session, channel.id)
+        posts = await post_crud.get_posts_by_channel_id(session, channel.id)
     with st.spinner("wait few seconds..."):
         st.write(f"description: {channel.description}")
         st.write(f"author: {channel.author}")

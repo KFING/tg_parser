@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 from src.common.moment import as_utc
 from src.dto import redis_models
-from src.dto.feed_rec_info import Source, Channel, TaskStatus
+from src.dto.feed_rec_info import Source, Channel, TaskStatus, Post
 from src.external_telegram import telegram_scrapy
 from src.external_youtube import youtube_scrapy
 
@@ -41,7 +41,7 @@ async def get_progress_parsing(source: Source, channel_name: str, *, log_extra: 
     return int(((utc_dt_to - utc_dt_now) * 100) / (utc_dt_to - utc_dt_from))
 
 
-async def start_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]):
+async def start_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[Post]:
     await rds.set(redis_models.source_channel_name_dt_to(source, parsing_parameters.channel_name), str(parsing_parameters.dt_to))
     await rds.set(redis_models.source_channel_name_dt_from(source, parsing_parameters.channel_name), str(parsing_parameters.dt_from))
     match source:

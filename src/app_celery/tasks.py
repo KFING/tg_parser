@@ -12,6 +12,7 @@ from src.common.async_utils import run_on_loop
 from src.db_main.cruds import post_crud
 from src.db_main.models.post import PostDbMdl
 from src.dto.feed_rec_info import Post
+from src.env import SCRAPPER_RESULTS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -82,9 +83,9 @@ def heap_sort(arr: list[PostDbMdl]):
 
 def _save_to_file(tmp_post, tmp_posts: PostDbMdl):
     tmp = ""
-    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_tasks / f"{tmp_post.pb_date.year}"
-    if (scrapper_path / f"{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json").exists():
-        text = json.load((scrapper_path / f"{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json").open())
+    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_id / f"{tmp_post.pb_date.year}"
+    if (scrapper_path / f"{tmp_post.channel_id}__{tmp_post.pb_date.month}.json").exists():
+        text = json.load((scrapper_path / f"{tmp_post.channel_id}__{tmp_post.pb_date.month}.json").open())
         text_posts = text["posts"]
         if isinstance(text_posts, list):
             for i, post in enumerate(parse_data(tmp_post.channel_tasks, text_posts)):

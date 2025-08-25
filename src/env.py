@@ -84,6 +84,7 @@ class Settings(BaseSettings):
 # TODO: replace with right app
 settings: Final = Settings(app=AppName.app_api)  # pyright: ignore
 
+SCRAPPER_RESULTS_DIR = settings.ROOT_PATH / ".var" / "data"
 SCRAPPER_RESULTS_DIR__YOUTUBE = settings.ROOT_PATH / ".var" / "data" / "youtube"
 SCRAPPER_RESULTS_DIR__INSTAGRAM = settings.ROOT_PATH / ".var" / "data" / "instagram"
 SCRAPPER_RESULTS_DIR__TELEGRAM = settings.ROOT_PATH / ".var" / "data" / "telegram"
