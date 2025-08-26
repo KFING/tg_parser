@@ -17,7 +17,7 @@ from src.dto.feed_rec_info import Source, Channel
 logger = logging.getLogger(__name__)
 
 rds = Redis()
-mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Task"
+mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Channel"
 
 
 async def main(dbm: DBM, log_extra: dict[str, str]) -> None:

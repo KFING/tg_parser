@@ -16,7 +16,7 @@ from src.dto.redis_models import RedisTask
 logger = logging.getLogger(__name__)
 
 rds = Redis()
-mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Task"
+mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Timeperiod"
 
 
 async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
