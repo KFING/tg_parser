@@ -50,7 +50,10 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     with st.spinner("wait few seconds..."):
         st.write(f"description: {channel.description}")
         st.write(f"author: {channel.author}")
-        st.write(f"uploaded of posts: {len(posts)}")
+        len_posts = len(posts)
+        st.write(f"uploaded of posts: {len_posts}")
+        if len_posts != 0:
+            st.write(f"from{posts[0].pb_date} to {posts[-1].pb_date}")
 
 
 

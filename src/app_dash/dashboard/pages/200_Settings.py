@@ -39,7 +39,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
             channels = await channel_crud.get_channels_by_source(session, source)
         channel_col.markdown(
             f"""
-                                <a href="/Settings_New?source={source}">add time period</a>
+                                <a href="/Settings_New_Channel?source={source}">add channel</a>
                             """,
             unsafe_allow_html=True,
         )
