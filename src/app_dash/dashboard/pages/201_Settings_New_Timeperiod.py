@@ -10,8 +10,8 @@ from src.app_api.dependencies import DBM
 from src.app_dash.run_dash_page import run_dash_page
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
-from src.dto.scrappy_models import Source
-from src.dto.redis_task import RedisTask
+from src.dto.feed_rec_info import Source
+from src.dto.redis_models import RedisTask
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
         if isinstance(time_period, tuple) and len(time_period) == 2:
             start_of_epoch = datetime(time_period[0].year, time_period[0].month, time_period[0].day)
             end_of_epoch = datetime(time_period[-1].year, time_period[-1].month, time_period[-1].day)
-            await rds.sadd(str(RedisTask.channel_tasks.value), channel_name)
+            await rds.sadd(str(RedisTask.channel_tasks.value), f"{source.value}${channel_name}")
             await rds.rpush(f"{source.value}${channel_name}", str(start_of_epoch), str(end_of_epoch))
             st.write(await rds.lrange(f"{source.value}${channel_name}", 0, -1))
 

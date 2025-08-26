@@ -8,8 +8,7 @@ from redis.asyncio import Redis
 from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
-from src.dto.scrappy_models import Source
-from src.dto.redis_task import RedisTask
+from src.dto.redis_models import RedisTask
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,7 @@ async def main(*, log_extra: dict[str, str]) -> None:
 
     st.header("SCRAPPER")
     with st.form("POST"):
+        from src.dto.feed_rec_info import Source
         source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
         channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
         time_period = st.date_input("Select time period", (START_OF_EPOCH, END_OF_EPOCH), START_OF_EPOCH, END_OF_EPOCH, format="MM.DD.YYYY")

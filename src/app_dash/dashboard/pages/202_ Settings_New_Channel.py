@@ -12,8 +12,7 @@ from src.app_dash.utils.streamlit import st_no_top_borders
 from src.cli_scrapper import scrapy_manager
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
 from src.db_main.cruds import channel_crud
-from src.dto.scrappy_models import Source, Channel
-from src.dto.redis_task import RedisTask
+from src.dto.feed_rec_info import Source, Channel
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +49,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
         async with dbm.session() as session:
             await channel_crud.add_channel(session, Channel(source=channel.source,
                                                             channel_name=channel.channel_name,
-                                                            author=channel.author,
-                                                            created_channel_at=channel.created_channel_at,
+                                                            channel_id=channel.channel_id,
                                                             description=channel.description,
                                                             link=channel.link))
 

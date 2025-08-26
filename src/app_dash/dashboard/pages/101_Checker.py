@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 
 from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
-from src.dto.scrappy_models import Source
+from src.dto.feed_rec_info import Source
 
 logger = logging.getLogger(__name__)
 

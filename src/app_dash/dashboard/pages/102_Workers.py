@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 
 from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
-from src.dto.redis_task import RedisTask
+from src.dto.redis_models import RedisTask
 
 logger = logging.getLogger(__name__)
 

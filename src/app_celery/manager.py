@@ -71,8 +71,8 @@ def manager_task():
     for tid in finished:
         logger.debug(f"task finished {tid}")
         running_tasks.pop(tid)
-        channel_name = running_channels.pop(tid)
-        tsk = serialize_channel_task(channel_name)
+        task_name = running_channels.pop(tid)
+        tsk = serialize_channel_task(task_name)
         if not tsk:
             continue
         result = running_new_task_worker(tsk)

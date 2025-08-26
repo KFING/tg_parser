@@ -11,8 +11,7 @@ from src.app_dash.run_dash_page import run_dash_page
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
 from src.db_main.cruds import channel_crud, post_crud
-from src.dto.scrappy_models import Source
-from src.dto.redis_task import RedisTask
+from src.dto.feed_rec_info import Source
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +53,12 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
         st.write(f"uploaded of posts: {len_posts}")
         if len_posts != 0:
             st.write(f"from{posts[0].pb_date} to {posts[-1].pb_date}")
+        st.markdown(
+            f"""
+                            <a href="/Settings_New_Timeperiod?source={source}&channel_name={channel_name}">add time period</a>
+                        """,
+            unsafe_allow_html=True,
+        )
 
 
 

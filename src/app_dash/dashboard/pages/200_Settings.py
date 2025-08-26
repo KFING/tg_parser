@@ -11,8 +11,7 @@ from src.app_dash.run_dash_page import run_dash_page
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.common.moment import END_OF_EPOCH, START_OF_EPOCH
 from src.db_main.cruds import post_crud, channel_crud
-from src.dto.scrappy_models import Source
-from src.dto.redis_task import RedisTask
+from src.dto.feed_rec_info import Source
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +42,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
                             """,
             unsafe_allow_html=True,
         )
-        channel_col.markdown(
-            f"""
-                        <a href="/Settings_New?source={source}">add time period</a>
-                    """,
-            unsafe_allow_html=True,
-        )
+
         for channel in channels:
             channel_col.write(f"CHANNEL NAME: {channel.channel_name}", divider="red")
             button_col.markdown(
