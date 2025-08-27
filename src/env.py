@@ -5,7 +5,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Final
 
-from pydantic import SecretStr, HttpUrl
+from pydantic import SecretStr, HttpUrl, PostgresDsn
 from pydantic_settings import BaseSettings
 
 ROOT_PATH = Path(__file__).parent.parent
@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     CELERY_BROKER: SecretStr = SecretStr("")
 
     DEEP_SEEK_API_KEY: SecretStr = SecretStr("")
+
+    DB_URL: PostgresDsn = PostgresDsn("")
 
     QDRANT_URL: HttpUrl
     CACHE_DB_URL: str
