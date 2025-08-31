@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Final
 
 from pydantic import SecretStr, HttpUrl, PostgresDsn
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_PATH = Path(__file__).parent.parent
 
@@ -44,6 +44,7 @@ class LogLevel(Enum):
 
 
 class Settings(BaseSettings):
+
     ROOT_PATH: Path = ROOT_PATH
     LOG_LVL: LogLevel = LogLevel.INFO
 
@@ -62,7 +63,7 @@ class Settings(BaseSettings):
 
     DEEP_SEEK_API_KEY: SecretStr = SecretStr("")
 
-    DB_URL: PostgresDsn = PostgresDsn("")
+    DB_URL: PostgresDsn
 
     QDRANT_URL: HttpUrl
     CACHE_DB_URL: str
@@ -95,7 +96,7 @@ SCRAPPER_RESULTS_DIR__YOUTUBE.mkdir(exist_ok=True, parents=True)
 SCRAPPER_RESULTS_DIR__INSTAGRAM.mkdir(exist_ok=True, parents=True)
 SCRAPPER_RESULTS_DIR__TELEGRAM.mkdir(exist_ok=True, parents=True)
 
-db_config = {
+"""db_config = {
     "host": os.environ.get("DB_HOST"),  # localhost
     "port": os.environ.get("DB_PORT"),  # 40438
     "dbname": os.environ.get("DB_NAME"),  # feedrecco_db
@@ -103,4 +104,4 @@ db_config = {
     "password": os.environ.get("DB_PASSWORD"),
 }
 
-DB_URL = f"postgresql+asyncpg://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}"
+DB_URL = f"postgresql+asyncpg://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}"""
