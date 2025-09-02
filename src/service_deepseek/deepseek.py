@@ -5,12 +5,19 @@ from google.genai import Client
 from src.common.async_utils import sync_to_async
 
 
+from openai import OpenAI
+
+
 @sync_to_async
-def prompt(client: Client, prompt: str) -> str:
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-    )
+def prompt(client: OpenAI, prompt: str) -> str:
+
+    response = client.chat.completions.create(
+    model="deepseek-chat",
+    messages=[
+        {"content": prompt},
+    ],
+    stream=False
+)
     text = response.text
     if isinstance(text, str):
         return text

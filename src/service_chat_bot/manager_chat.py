@@ -9,6 +9,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from qdrant_client import QdrantClient
 from langchain import OpenAI
 """
+import asyncio
 import uuid
 from pathlib import Path
 from typing import Iterator
@@ -27,29 +28,51 @@ from langchain.chains import RetrievalQA
 from langchain.vectorstores.base import VectorStoreRetriever
 from qdrant_client import QdrantClient
 
+from src import service_deepseek
+from src.dto.feed_rec_info import Post
 from src.dto.qdrant_models import QdrantPostMetadata, QdrantChunkMetadata, PayloadPost, PayloadChunk
 from src.env import settings, SCRAPPER_RESULTS_DIR__TELEGRAM
+from src.service_deepseek import deepseek
 
-def serialize_post(embedder_model: str, embedder: CacheBackedEmbeddings, text_splitter: CharacterTextSplitter, text: list[Document]) -> QdrantPostMetadata:
+
+def json_loader(path: Path) -> Post:
+    #parser_logic
+    """return Post(
+    channel_name=,
+    title=,
+    post_id=,
+    content=,
+    pb_date=,
+    link=,
+    media=,
+    )"""
+    pass
+
+
+def serialize_post(embedder_model: str, embedder: CacheBackedEmbeddings, client: OpenAI, text_splitter: CharacterTextSplitter, text: list[Document]) -> QdrantPostMetadata:
     text_chunks = text_splitter.split_documents(text)
-    embedding_vector = embedder.embed_documents([text.page_content for text in text_chunks])
-    summary = "getting summary from llm"
+    summary = asyncio.run(deepseek.prompt(client, prompt=""))               #поменять СРОЧНО
+
+    embedding_vector = embedder.embed_query(summary)
+
+    title = "getting title from llm"
     return QdrantPostMetadata(
         id=uuid.uuid4(),
         vector=embedding_vector,
         payload=PayloadPost(
-            title=,
+            title=title,                # где то взять
             summary=summary,
             embedding_model=embedder_model,
         ))
 
+
 def serialize_chunks(embedder_model: str, embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_splitter: CharacterTextSplitter, text: list[Document]) -> Iterator[QdrantChunkMetadata]:
     text_chunks = text_splitter.split_documents(text)
-    embedding_vector = embedder.embed_documents([text.page_content for text in text_chunks])
+    embedding_vectors = embedder.embed_documents([text.page_content for text in text_chunks])
     for chunk_id, text in enumerate(text_chunks):
         yield QdrantChunkMetadata(
             id=uuid.uuid4(),
-            vector=embedding_vector[chunk_id],
+            vector=embedding_vectors[chunk_id],
             payload=PayloadChunk(
                 post_id=post_id,
                 chunk_id=chunk_id,
@@ -60,6 +83,8 @@ def serialize_chunks(embedder_model: str, embedder: CacheBackedEmbeddings, post_
 
 
 def add_data_to_qdrant(path: Path, embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"):
+    client = OpenAI(api_key=settings.DEEP_SEEK_API_KEY.get_secret_value(), base_url="https://api.deepseek.com")
+
     qdrant = QdrantClient(
             url=str(settings.QDRANT_URL),
             prefer_grpc=True,

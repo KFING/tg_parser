@@ -38,23 +38,17 @@ class RawPostMedia(BaseModel):
     downloaded_file: Path | HttpUrl | None
 
 
-class FeedRecPostCaption(BaseModel):
+class FeedRecPostTranscription(BaseModel):
     lang: Lang
     raw: str
     parsed: list[tuple[timedelta, str]]
 
-
-class FeedRecPostTimeLine(BaseModel):
-    lang: Lang
-    raw: str
-    parsed: list[tuple[timedelta, str]]
 
 
 class RawPostMediaExt(RawPostMedia):
     quality_raw: str | None  # for images is NONE
     preview: RawPostMedia | None
-    captions: list[FeedRecPostCaption]
-    timeline: list[FeedRecPostTimeLine]
+    transcription: list[FeedRecPostTranscription]
 
 
 class FeedRecPostShort(BaseModel, frozen=True, extra="forbid"):
