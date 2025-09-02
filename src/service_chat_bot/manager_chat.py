@@ -11,7 +11,7 @@ from langchain import OpenAI
 """
 import uuid
 from pathlib import Path
-
+from typing import Iterator
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.documents import Document
@@ -27,7 +27,7 @@ from langchain.chains import RetrievalQA
 from langchain.vectorstores.base import VectorStoreRetriever
 from qdrant_client import QdrantClient
 
-from src.dto.qdrant_models import QdrantPostMetadata, QdrantChunkMetadata, PayloadPost
+from src.dto.qdrant_models import QdrantPostMetadata, QdrantChunkMetadata, PayloadPost, PayloadChunk
 from src.env import settings, SCRAPPER_RESULTS_DIR__TELEGRAM
 
 def serialize_post(embedder_model: str, embedder: CacheBackedEmbeddings, text_splitter: CharacterTextSplitter, text: list[Document]) -> QdrantPostMetadata:
@@ -39,15 +39,23 @@ def serialize_post(embedder_model: str, embedder: CacheBackedEmbeddings, text_sp
         vector=embedding_vector,
         payload=PayloadPost(
             title=,
-            summary=,
+            summary=summary,
             embedding_model=embedder_model,
         ))
 
-def serialize_chunks(embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_splitter: CharacterTextSplitter, text: list[Document]) -> list[QdrantChunkMetadata]:
+def serialize_chunks(embedder_model: str, embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_splitter: CharacterTextSplitter, text: list[Document]) -> Iterator[QdrantChunkMetadata]:
     text_chunks = text_splitter.split_documents(text)
-    embedding_list = embedder.embed_documents([text.page_content for text in text_chunks])
-
-    pass
+    embedding_vector = embedder.embed_documents([text.page_content for text in text_chunks])
+    for chunk_id, text in enumerate(text_chunks):
+        yield QdrantChunkMetadata(
+            id=uuid.uuid4(),
+            vector=embedding_vector[chunk_id],
+            payload=PayloadChunk(
+                post_id=post_id,
+                chunk_id=chunk_id,
+                text=text.page_content,
+                embedding_model=embedder_model,
+            ))
 
 
 

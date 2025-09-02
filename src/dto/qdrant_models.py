@@ -12,7 +12,7 @@ class PayloadPost(BaseModel):
 
 class QdrantPostMetadata(BaseModel):
     id: uuid.UUID
-    vector: list[int]
+    vector: list[float]
     payload: PayloadPost
 
 
@@ -25,5 +25,5 @@ class PayloadChunk(BaseModel):
 
 class QdrantChunkMetadata(BaseModel):
     id: uuid.UUID
-    vector: list[int]
+    vector: list[float]
     payload: PayloadChunk
