@@ -12,7 +12,9 @@ from langchain import OpenAI
 import uuid
 from pathlib import Path
 
+
 from langchain_community.chat_models import ChatOpenAI
+from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings, OpenAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Qdrant
@@ -25,19 +27,35 @@ from langchain.chains import RetrievalQA
 from langchain.vectorstores.base import VectorStoreRetriever
 from qdrant_client import QdrantClient
 
-from src.dto.qdrant_models import QdrantPostMetadata, QdrantChunkMetadata
+from src.dto.qdrant_models import QdrantPostMetadata, QdrantChunkMetadata, PayloadPost
 from src.env import settings, SCRAPPER_RESULTS_DIR__TELEGRAM
 
-def serialize_post(embedder: CacheBackedEmbeddings, text: list[str]) -> QdrantPostMetadata:
+def serialize_post(embedder_model: str, embedder: CacheBackedEmbeddings, text_splitter: CharacterTextSplitter, text: list[Document]) -> QdrantPostMetadata:
+    text_chunks = text_splitter.split_documents(text)
+    embedding_vector = embedder.embed_documents([text.page_content for text in text_chunks])
+    summary = "getting summary from llm"
+    return QdrantPostMetadata(
+        id=uuid.uuid4(),
+        vector=embedding_vector,
+        payload=PayloadPost(
+            title=,
+            summary=,
+            embedding_model=embedder_model,
+        ))
+
+def serialize_chunks(embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_splitter: CharacterTextSplitter, text: list[Document]) -> list[QdrantChunkMetadata]:
+    text_chunks = text_splitter.split_documents(text)
     embedding_list = embedder.embed_documents([text.page_content for text in text_chunks])
+
     pass
 
-def serialize_chunks(embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_chunks: list[str]) -> list[QdrantChunkMetadata]:
-    embedding_list = embedder.embed_documents([text.page_content for text in text_chunks])
 
-    pass
 
-def file_loader_init(path: Path):
+def add_data_to_qdrant(path: Path, embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"):
+    qdrant = QdrantClient(
+            url=str(settings.QDRANT_URL),
+            prefer_grpc=True,
+        )
     store = RedisStore(
         redis_url=str(settings.CACHE_DB_URL),
         client_kwargs={'db': 2},
@@ -45,7 +63,7 @@ def file_loader_init(path: Path):
     )
 
     underlying_embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        model_name=embedding_model
     )
 
     embedder = CacheBackedEmbeddings.from_bytes_store(
@@ -63,54 +81,8 @@ def file_loader_init(path: Path):
 
     text = TextLoader(path).load()
 
-    text_chunks = text_splitter.split_documents(text)
 
-    vectorstore = Qdrant.from_documents(
-        text_chunks,
-        embedder,
-        url=str(settings.QDRANT_URL),
-        prefer_grpc=True,
-        collection_name='docs',
-        force_recreate=True,
-    )
-
-    embedding_list = embedder.embed_documents([text.page_content for text in text_chunks])
-
-    return embedding_list
-
-
-def add_data_to_qdrant():
-    qdrant = QdrantClient(
-            url=str(settings.QDRANT_URL),
-            prefer_grpc=True,
-        )
-    store = RedisStore(
-        redis_url=str(settings.CACHE_DB_URL),
-        client_kwargs={'db': 2},
-        namespace='embedding_caches',
-    )
-
-    underlying_embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
-
-    embedder = CacheBackedEmbeddings.from_bytes_store(
-        underlying_embeddings,
-        store,
-        namespace=underlying_embeddings.model_name
-    )
-
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=1000,
-        chunk_overlap=100,
-        length_function=len,
-    )
-
-    text = TextLoader((SCRAPPER_RESULTS_DIR__TELEGRAM / 'raw' / 'data.txt')).load()
-    text_chunks = text_splitter.split_documents(text)
-
-    s_text = serialize_post(embedder, [chunk.page_content for chunk in text_chunks])
+    s_text = serialize_post(embedder, text_splitter, text)
     qdrant.upsert(
         points=[s_text.model_dump_json(indent=4)],
         prefer_grpc=True,
@@ -168,6 +140,48 @@ def initialize():
         ),
         return_source_documents=False,
     )
-file_loader_init()
 
 
+"""file_loader_init()
+
+
+def file_loader_init(path: Path):
+    store = RedisStore(
+        redis_url=str(settings.CACHE_DB_URL),
+        client_kwargs={'db': 2},
+        namespace='embedding_caches',
+    )
+
+    underlying_embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    embedder = CacheBackedEmbeddings.from_bytes_store(
+        underlying_embeddings,
+        store,
+        namespace=underlying_embeddings.model_name
+    )
+
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=1000,
+        chunk_overlap=100,
+        length_function=len,
+    )
+
+    text = TextLoader(path).load()
+
+    text_chunks = text_splitter.split_documents(text)
+
+    vectorstore = Qdrant.from_documents(
+        text_chunks,
+        embedder,
+        url=str(settings.QDRANT_URL),
+        prefer_grpc=True,
+        collection_name='docs',
+        force_recreate=True,
+    )
+
+    embedding_list = embedder.embed_documents([text.page_content for text in text_chunks])
+
+    return embedding_list"""

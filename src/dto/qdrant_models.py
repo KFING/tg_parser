@@ -7,9 +7,7 @@ from pydantic import BaseModel
 class PayloadPost(BaseModel):
     title: str
     summary: str
-    date: datetime
     embedding_model: str
-    embedding_version: str
 
 
 class QdrantPostMetadata(BaseModel):
