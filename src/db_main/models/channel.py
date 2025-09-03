@@ -1,7 +1,6 @@
 from datetime import datetime
-from enum import Enum
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db_main.database import Base
@@ -16,7 +15,6 @@ class ChannelDbMdl(Base):
     # props:
     source: Mapped[Source] = mapped_column(Enum(Source), nullable=False)
     channel_name: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
-    author: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     created_channel_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     description: Mapped[str] = mapped_column(nullable=False, default="", server_default="")
     link: Mapped[str] = mapped_column(nullable=False, default="", server_default="")

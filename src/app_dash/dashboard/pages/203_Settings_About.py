@@ -48,7 +48,6 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
         posts = await post_crud.get_posts_by_channel_id(session, channel.id)
     with st.spinner("wait few seconds..."):
         st.write(f"description: {channel.description}")
-        st.write(f"author: {channel.author}")
         len_posts = len(posts)
         st.write(f"uploaded of posts: {len_posts}")
         if len_posts != 0:

@@ -4,7 +4,7 @@ COPY pyproject.docker.toml ./pyproject.toml
 
 RUN pip install --no-cache-dir poetry
 
-COPY .env.template .env.test srv ./
+COPY .env .env.template .env.test srv ./
 COPY src/parser_app_api/  ./src/parser_app_api/
 COPY src/cli_scrapper/ ./src/cli_scrapper/
 COPY src/const/ ./src/const/

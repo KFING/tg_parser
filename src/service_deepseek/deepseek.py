@@ -1,10 +1,4 @@
-# Please install OpenAI SDK first: `pip3 install openai`
-
-from google.genai import Client
-
 from src.common.async_utils import sync_to_async
-
-
 from openai import OpenAI
 
 

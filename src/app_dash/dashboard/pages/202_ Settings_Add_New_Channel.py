@@ -17,18 +17,18 @@ from src.dto.feed_rec_info import Source, Channel
 logger = logging.getLogger(__name__)
 
 rds = Redis()
-mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Channel"
+mdl_name = "src.app_dash.dashboard.pages.202_Settings_Add_New_Channel"
 
 
 async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     st.set_page_config(
-        page_title="SCRAPPER NEW TASK",
+        page_title="FORM VIA ADD NEW CHANNEL",
         page_icon="👋",
         layout="wide",
     )
     st_no_top_borders()
 
-    st.header("SCRAPPER NEW TASK")
+    st.header("FORM VIA ADD NEW CHANNEL")
     default_source = st.query_params.get("source", "")
     with st.form("TASK"):
         match default_source:

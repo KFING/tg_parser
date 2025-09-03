@@ -16,18 +16,18 @@ from src.dto.redis_models import RedisTask
 logger = logging.getLogger(__name__)
 
 rds = Redis()
-mdl_name = "src.app_dash.dashboard.pages.201_Settings_New_Timeperiod"
+mdl_name = "src.app_dash.dashboard.pages.201_Settings_Add_New_Posts"
 
 
 async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
     st.set_page_config(
-        page_title="SCRAPPER NEW TASK",
+        page_title="FORM VIA ADD NEW POSTS",
         page_icon="👋",
         layout="wide",
     )
     st_no_top_borders()
 
-    st.header("SCRAPPER NEW TASK")
+    st.header("FORM VIA ADD NEW POSTS")
     default_source = st.query_params.get("source", "")
     default_channel_name = st.query_params.get("channel_name", "")
     with st.form("TASK"):
@@ -38,7 +38,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
                 source = Source.TELEGRAM
             case _:
                 source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
-        channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME", default=default_channel_name)
+        channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME", value=default_channel_name)
         time_period = st.date_input("Select time period", (START_OF_EPOCH, END_OF_EPOCH), START_OF_EPOCH, END_OF_EPOCH, format="MM.DD.YYYY")
         if not st.form_submit_button("CREATE"):
             return
