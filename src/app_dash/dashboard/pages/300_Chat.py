@@ -15,8 +15,7 @@ mdl_name = "src.app_dash.dashboard.pages.300_Chat"
 
 @st.cache_resource
 async def init_qa():
-    manager_chat.file_loader_init()
-    return manager_chat.initialize()
+    return manager_chat.initialize_retriever()
 
 async def main() -> None:
     st.set_page_config(

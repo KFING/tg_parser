@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class PayloadPost(BaseModel):
     title: str
     summary: str
+    full_text: str
     embedding_model: str
 
 

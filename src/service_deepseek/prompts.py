@@ -1,7 +1,7 @@
 
 
 def realtime_summary(
-    user_answer: str,
+    text: str,
     target: str = "you're a voice sales consultant who sells elephants",
 ) -> str:
     """каждый запрос и ответ попадает в него последовательно склеиваясь с предудыщими.
@@ -16,7 +16,8 @@ def realtime_summary(
 
     запрашивать мелкие прдложение через промпт
     """
-    return f"""{target}. User said {user_answer}, do a summarization of what's been said. don't use extra words and characters: */-#@№$%^&()[]+_"""
+    return f"""{target}. Do a summarization this text. Don't use extra words and characters: */-#@№$%^&()[]+_
+Text: [{text}] """
 
 
 def realtime_answer(
