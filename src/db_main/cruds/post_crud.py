@@ -1,3 +1,4 @@
+from typing import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +7,7 @@ from src.db_main.models.post import PostDbMdl
 from src.dto.feed_rec_info import Post
 
 
-async def get_posts_by_channel_id(db: AsyncSession, channel_id: str) -> list[PostDbMdl]:
+async def get_posts_by_channel_id(db: AsyncSession, channel_id: str) -> Sequence[PostDbMdl]:
     posts = await db.execute(select(PostDbMdl).where(PostDbMdl.channel_id == channel_id))
     return posts.scalars().all()
 

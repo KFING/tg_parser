@@ -60,6 +60,4 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
         )
 
 
-
-
 run_dash_page(mdl_name, main)

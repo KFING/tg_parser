@@ -35,6 +35,4 @@ async def main() -> None:
         st.write(f"Peppi: {response["result"]}")
 
 
-
-
 asyncio.run(main())

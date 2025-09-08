@@ -12,8 +12,9 @@ logger = logging.getLogger(__name__)
 
 rds = Redis()
 
+mdl_name = "src.app_dash.dashboard.pages.101_Checker"
 
-async def main(*, log_extra: dict[str, str]) -> None:
+async def main() -> None:
     st.set_page_config(
         page_title="TELEGRAM WORKER",
         page_icon="👋",
@@ -30,5 +31,4 @@ async def main(*, log_extra: dict[str, str]) -> None:
         st.write(await rds.lrange(f"{source.value}${channel_name}", 0, -1))
 
 
-with log.scope(logger, "Telegram_post") as _log_extra:
-    asyncio.run(main(log_extra=_log_extra))
+asyncio.run(main())

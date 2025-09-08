@@ -13,6 +13,7 @@ from src.db_main.cruds import post_crud
 from src.db_main.models.post import PostDbMdl
 from src.dto.feed_rec_info import Post
 from src.env import SCRAPPER_RESULTS_DIR
+from src.service_chat_bot import manager_chat
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def parse_data(channel_name: str, posts: list[dict[str, str]]) -> list[Post]:
     return tg_posts
 
 
-def heapify(arr: list[PostDbMdl], n: int, i: int):
+def heapify(arr: list[Post], n: int, i: int):
     largest = i  # Initialize largest as root
     l = 2 * i + 1  # left = 2*i + 1
     r = 2 * i + 2  # right = 2*i + 2
@@ -68,7 +69,7 @@ def heapify(arr: list[PostDbMdl], n: int, i: int):
         heapify(arr, n, largest)
 
 
-def heap_sort(arr: list[PostDbMdl]):
+def heap_sort(arr: list[Post]):
     n = len(arr)
 
     # Построение max-heap.
@@ -81,27 +82,29 @@ def heap_sort(arr: list[PostDbMdl]):
         heapify(arr, i, 0)
 
 
-def _save_to_file(tmp_post, tmp_posts: PostDbMdl):
+def _save_to_file_and_to_qdrant(tmp_post: Post, tmp_posts: list[Post]):
     tmp = ""
-    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_id / f"{tmp_post.pb_date.year}"
-    if (scrapper_path / f"{tmp_post.channel_id}__{tmp_post.pb_date.month}.json").exists():
-        text = json.load((scrapper_path / f"{tmp_post.channel_id}__{tmp_post.pb_date.month}.json").open())
+    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_name / f"{tmp_post.pb_date.year}"
+    scrapper_path_file: Path = (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json")
+    if (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").exists():
+        text = json.load((scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").open())
         text_posts = text["posts"]
         if isinstance(text_posts, list):
-            for i, post in enumerate(parse_data(tmp_post.channel_tasks, text_posts)):
+            for i, post in enumerate(parse_data(tmp_post.channel_name, text_posts)):
                 tmp_posts.insert(i, post)
             tmp = "TMP"
     scrapper_path.mkdir(parents=True, exist_ok=True)
-    (scrapper_path / f"{tmp}{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json").write_text(TmpListTgPost(posts=tmp_posts).model_dump_json(indent=4))
+    (scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").write_text(TmpListTgPost(posts=tmp_posts).model_dump_json(indent=4))
     if tmp == "TMP":
-        (scrapper_path / f"{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json").rename(
-            scrapper_path / f"{tmp}{tmp_post.channel_tasks}__{tmp_post.pb_date.month}.json"
+        (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").rename(
+            scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json"
         )
+    manager_chat.add_post_to_qdrant(scrapper_path_file)
 
 
-def save_to_telegram_file(posts: list[PostDbMdl]) -> None:
+def save_post(posts: list[Post]) -> None:
     heap_sort(posts)
-    tmp_posts: list[PostDbMdl] = []
+    tmp_posts: list[Post] = []
     for post in posts:
         try:
             tmp_post = tmp_posts[-1]
@@ -112,11 +115,11 @@ def save_to_telegram_file(posts: list[PostDbMdl]) -> None:
             tmp_posts.append(post)
             continue
         # save
-        _save_to_file(tmp_post, tmp_posts)
+        _save_to_file_and_to_qdrant(tmp_post, tmp_posts)
         tmp_posts.clear()
         tmp_posts.append(post)
     try:
-        _save_to_file(tmp_posts[-1], tmp_posts)
+        _save_to_file_and_to_qdrant(tmp_posts[-1], tmp_posts)
     except IndexError:
         pass
 
@@ -134,5 +137,5 @@ def parse_api(self, channel_name, task) -> None:
         return
     posts = parse_data(channel_name, text)
     db = run_on_loop(get_db_main_for_celery())
-    posts = run_on_loop(post_crud.create_posts(db, posts))
-    save_to_telegram_file(posts)
+    run_on_loop(post_crud.create_posts(db, posts))
+    save_post(posts)
