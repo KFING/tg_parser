@@ -74,13 +74,13 @@ app_dash:
 			--server.fileWatcherType=none \
 			--server.headless=true \
 			--client.toolbarMode=developer \
-			--server.port=40002 \
+			--server.port=40008 \
 			--server.address=0.0.0.0 \
 			./src/app_dash/dashboard/000_Home.py
 
 .PHONY: app_api
 app_api:
-	poetry run uvicorn src.app_api.main:get_app \
+	poetry run uvicorn src.parin:get_app \
 		--timeout-graceful-shutdown 10 \
 		--limit-max-requests 1024 \
 		--loop asyncio \
@@ -107,7 +107,7 @@ migrations-check:
 
 .PHONY: app_celery
 app_celery:
-	watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A src.app_celery.main.celery_app worker -c 1 --loglevel=debug
+	watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A src.app_celery.main.app worker -c 1 --loglevel=debug
 
 .PHONY: app_celery_flower
 app_celery_flower:
@@ -115,7 +115,7 @@ app_celery_flower:
 
 .PHONY: app_celery_beat
 app_celery_beat:
-	watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A src.app_celery.main.celery_app beat --loglevel=debug
+	watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A src.app_celery.main.app beat --loglevel=debug
 
 .PHONY: compose-up
 compose-up:

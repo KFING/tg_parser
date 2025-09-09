@@ -55,6 +55,7 @@ def running_new_task_worker(tsk: Task):
 def manager_task():
     global running_tasks, running_channels
 
+    logger.debug(f"[{datetime.now()}] Manager is running")
     cow_redis = rds.get(str(RedisTask.counter_of_workers.value))
     if isinstance(cow_redis.decode("utf-8"), str):
         cow = int(cow_redis.decode("utf-8"))
@@ -62,9 +63,10 @@ def manager_task():
         cow = 3
     byte_tasks = rds.smembers(str(RedisTask.channel_tasks.value))
     if not byte_tasks:
+        logger.debug(f"[{datetime.now()}] tasks finished")
         return
     tasks = [task.decode("utf-8") for task in byte_tasks]
-    logger.debug(f"[{datetime.now()}] Manager is running")
+
 
     finished = [tid for tid, r in running_tasks.items() if AsyncResult(tid).ready()]
 
@@ -76,7 +78,7 @@ def manager_task():
         if not tsk:
             continue
         result = running_new_task_worker(tsk)
-        logger.debug(f"Running new task: {result.id} :: {channel_name}")
+        logger.debug(f"Running new task: {result.id} :: {tsk.channel_name}")
 
     for i in range(cow - len(running_tasks.items())):
         for item in running_channels.items():

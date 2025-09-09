@@ -41,7 +41,7 @@ async def get_progress_parsing(source: Source, channel_name: str, *, log_extra: 
     return int(((utc_dt_to - utc_dt_now) * 100) / (utc_dt_to - utc_dt_from))
 
 
-async def start_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[Post]:
+async def start_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[Post] | None:
     await rds.set(redis_models.source_channel_name_dt_to(source, parsing_parameters.channel_name), str(parsing_parameters.dt_to))
     await rds.set(redis_models.source_channel_name_dt_from(source, parsing_parameters.channel_name), str(parsing_parameters.dt_from))
     match source:

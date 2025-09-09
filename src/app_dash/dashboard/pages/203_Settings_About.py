@@ -54,7 +54,7 @@ async def main(dbm: DBM, log_extra: dict[str, str]) -> None:
             st.write(f"from{posts[0].pb_date} to {posts[-1].pb_date}")
         st.markdown(
             f"""
-                            <a href="/Settings_New_Timeperiod?source={source}&channel_name={channel_name}">add time period</a>
+                            <a href="/Settings_Add_New_Timeperiod?source={source}&channel_name={channel_name}">add time period</a>
                         """,
             unsafe_allow_html=True,
         )

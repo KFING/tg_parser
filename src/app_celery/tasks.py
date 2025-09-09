@@ -127,7 +127,7 @@ def save_post(posts: list[Post]) -> None:
 @app.task(bind=True)
 def parse_api(self, channel_name, task) -> None:
     with httpx.Client() as client:
-        response = client.post("http://localhost:50001/start", data=task, timeout=10000)
+        response = client.post("http://scrapy:50001/start", data=task, timeout=10000)
         logger.debug(response.status_code)
         if response.status_code != 200:
             return
@@ -135,6 +135,7 @@ def parse_api(self, channel_name, task) -> None:
     if not isinstance(text, list):
         logger.debug(f"noooooooooooooooooooooooooooooooooooo -- {text}")
         return
+    logger.debug(f"yeeeeeeesssssss************************* -- {text}")
     posts = parse_data(channel_name, text)
     db = run_on_loop(get_db_main_for_celery())
     run_on_loop(post_crud.create_posts(db, posts))

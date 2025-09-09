@@ -44,7 +44,7 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
         new_messages = [msg for msg in messages if msg.post_id not in [m.post_id for m in all_messages]]
         all_messages.extend(new_messages)
         logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
-        current_id = min(msg.post_id for msg in messages if msg.post_id is not None) - 1
+        current_id = min(int(msg.post_id) for msg in messages if msg.post_id is not None) - 1
 
     if current_id <= 1:
         logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
@@ -87,6 +87,7 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
         # Get messages from the first response
         html_text = await response.text()
         messages = extract_messages(html_text, channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
+        logger.debug(f"Found {len(messages)}", extra=log_extra)
         if not messages:
             await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
@@ -122,7 +123,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
     """
     soup = BeautifulSoup(html_content, "html.parser")
     messages: list[Post] = []
-
+    logger.debug("start searching messages", extra=log_extra)
     for message_div in soup.find_all("div", class_="tgme_widget_message"):
         try:
             # Get message ID and channel name
@@ -137,14 +138,14 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             utc_dt = as_utc(datetime.fromisoformat(date_elem["datetime"]) if date_elem else datetime.utcnow())
 
             if utc_dt >= utc_dt_to:
-                """logger.debug(
-                    f"get_posts_list_channel({channel_name}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
-                )"""
+                logger.debug(
+                    f"get_posts_list_channel({channel_name}):: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
+                )
                 continue
             if utc_dt <= utc_dt_from:
-                """logger.debug(
-                    f"get_posts_list_channel({channel_name}) it={i} msg_id={post.video_id} :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
-                )"""
+                logger.debug(
+                    f"get_posts_list_channel({channel_name}) :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
+                )
                 return messages
 
             # Get text
