@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from redis.asyncio import Redis
 
-from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
+from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl, InfoParsingParametersApiMdl
 from src.common.moment import as_utc
 from src.dto import redis_models
 from src.dto.feed_rec_info import Source, Channel, TaskStatus, Post
@@ -18,21 +18,21 @@ END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host="redis", port=6379)
 
 
-async def get_channel_info(source: Source, channel_name: str) -> Channel | None:
-    match source:
+async def get_channel_info(info_parsing_parameters: InfoParsingParametersApiMdl) -> Channel | None:
+    match info_parsing_parameters.source:
         case Source.YOUTUBE:
             pass
         case Source.TELEGRAM:
             pass
 
-async def get_progress_parsing(source: Source, channel_name: str, *, log_extra: dict[str, str]) -> int:
-    dt_to = await rds.get(redis_models.source_channel_name_dt_to(source, channel_name))
+async def get_progress_parsing(info_parsing_parameters: InfoParsingParametersApiMdl, *, log_extra: dict[str, str]) -> int:
+    dt_to = await rds.get(redis_models.source_channel_name_dt_to(info_parsing_parameters.source, info_parsing_parameters.channel_name))
     if not dt_to:
         return -1
-    dt_from = await rds.get(redis_models.source_channel_name_dt_from(source, channel_name))
+    dt_from = await rds.get(redis_models.source_channel_name_dt_from(info_parsing_parameters.source, info_parsing_parameters.channel_name))
     if not dt_from:
         return -1
-    dt_now = await rds.get(redis_models.source_channel_name_dt_now(source, channel_name))
+    dt_now = await rds.get(redis_models.source_channel_name_dt_now(info_parsing_parameters.source, info_parsing_parameters.channel_name))
     if not dt_now:
         return -1
     utc_dt_from = as_utc(datetime.fromisoformat(dt_from))
@@ -41,10 +41,10 @@ async def get_progress_parsing(source: Source, channel_name: str, *, log_extra: 
     return int(((utc_dt_to - utc_dt_now) * 100) / (utc_dt_to - utc_dt_from))
 
 
-async def start_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[Post] | None:
-    await rds.set(redis_models.source_channel_name_dt_to(source, parsing_parameters.channel_name), str(parsing_parameters.dt_to))
-    await rds.set(redis_models.source_channel_name_dt_from(source, parsing_parameters.channel_name), str(parsing_parameters.dt_from))
-    match source:
+async def start_parsing(parsing_parameters: ParsingParametersApiMdl, *, log_extra: dict[str, str]) -> list[Post] | None:
+    await rds.set(redis_models.source_channel_name_dt_to(parsing_parameters.source, parsing_parameters.channel_name), str(parsing_parameters.dt_to))
+    await rds.set(redis_models.source_channel_name_dt_from(parsing_parameters.source, parsing_parameters.channel_name), str(parsing_parameters.dt_from))
+    match parsing_parameters.source:
         case Source.YOUTUBE:
             posts = await youtube_scrapy.get_channel_posts_list(parsing_parameters.channel_name, log_extra=log_extra)
         case Source.TELEGRAM:
@@ -53,16 +53,16 @@ async def start_parsing(source: Source, parsing_parameters: ParsingParametersApi
             return None
     if not isinstance(posts, list):
         return None
-    await rds.set(redis_models.source_channel_name_status(source, parsing_parameters.channel_name), TaskStatus.free.value)
+    await rds.set(redis_models.source_channel_name_status(parsing_parameters.source, parsing_parameters.channel_name), TaskStatus.free.value)
     return posts
 
 
-async def stop_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl) -> None:
-    await rds.delete(redis_models.source_channel_name_dt_to(source, parsing_parameters.channel_name))
-    await rds.delete(redis_models.source_channel_name_dt_from(source, parsing_parameters.channel_name))
-    await rds.set(parsing_parameters.channel_name, TaskStatus.free.value)
+async def stop_parsing(info_parsing_parameters: InfoParsingParametersApiMdl) -> None:
+    await rds.delete(redis_models.source_channel_name_dt_to(info_parsing_parameters.source, info_parsing_parameters.channel_name))
+    await rds.delete(redis_models.source_channel_name_dt_from(info_parsing_parameters.source, info_parsing_parameters.channel_name))
+    await rds.set(info_parsing_parameters.channel_name, TaskStatus.free.value)
 
 
-async def change_params_parsing(source: Source, parsing_parameters: ParsingParametersApiMdl) -> None:
-    await rds.set(redis_models.source_channel_name_dt_to(source, parsing_parameters.channel_name), str(parsing_parameters.dt_to))
-    await rds.set(redis_models.source_channel_name_dt_from(source, parsing_parameters.channel_name), str(parsing_parameters.dt_from))
+async def change_params_parsing(parsing_parameters: ParsingParametersApiMdl) -> None:
+    await rds.set(redis_models.source_channel_name_dt_to(parsing_parameters.source, parsing_parameters.channel_name), str(parsing_parameters.dt_to))
+    await rds.set(redis_models.source_channel_name_dt_from(parsing_parameters.source, parsing_parameters.channel_name), str(parsing_parameters.dt_from))

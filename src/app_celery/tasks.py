@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, HttpUrl
@@ -11,7 +12,7 @@ from src.app_celery.main import app
 from src.common.async_utils import run_on_loop
 from src.db_main.cruds import post_crud
 from src.db_main.models.post import PostDbMdl
-from src.dto.feed_rec_info import Post
+from src.dto.feed_rec_info import Post, Task, Source
 from src.env import SCRAPPER_RESULTS_DIR
 from src.service_chat_bot import manager_chat
 
@@ -26,12 +27,13 @@ class TmpListTgPost(BaseModel):
     posts: list[Post]
 
 
-def parse_data(channel_name: str, posts: list[dict[str, str]]) -> list[Post]:
+def parse_data(source: Source, channel_name: str, posts: list[dict[str, str]]) -> list[Post]:
     tg_posts: list[Post] = []
     try:
         for post in posts:
             tg_posts.append(
                 Post(
+                    source=source,
                     channel_name=post["channel_name"],
                     post_id=post["post_id"],
                     content=post["content"],
@@ -125,9 +127,9 @@ def save_post(posts: list[Post]) -> None:
 
 
 @app.task(bind=True)
-def parse_api(self, channel_name, task) -> None:
+def parse_api(self, channel_name: str, task: dict[str, Any]) -> None:
     with httpx.Client() as client:
-        response = client.post("http://scrapy:50001/start", data=task, timeout=10000)
+        response = client.post("http://localhost:50001/start_parser", data=task, timeout=10000)
         logger.debug(response.status_code)
         if response.status_code != 200:
             return
@@ -136,7 +138,7 @@ def parse_api(self, channel_name, task) -> None:
         logger.debug(f"noooooooooooooooooooooooooooooooooooo -- {text}")
         return
     logger.debug(f"yeeeeeeesssssss************************* -- {text}")
-    posts = parse_data(channel_name, text)
+    posts = parse_data(Source(task['source']), channel_name, text)
     db = run_on_loop(get_db_main_for_celery())
     run_on_loop(post_crud.create_posts(db, posts))
     save_post(posts)

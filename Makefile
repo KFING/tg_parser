@@ -80,7 +80,7 @@ app_dash:
 
 .PHONY: app_api
 app_api:
-	poetry run uvicorn src.parin:get_app \
+	poetry run uvicorn src.parsing_app_api.main:get_app \
 		--timeout-graceful-shutdown 10 \
 		--limit-max-requests 1024 \
 		--loop asyncio \

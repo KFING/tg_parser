@@ -6,7 +6,7 @@ from redis import Redis
 
 from src.app_celery.main import app
 from src.app_celery.tasks import parse_api
-from src.dto.feed_rec_info import Task
+from src.dto.feed_rec_info import Task, Source
 from src.dto.redis_models import RedisTask
 
 rds = Redis()
@@ -28,8 +28,13 @@ def serialize_channel_task(task_name: str) -> Task | None:
         if len(tsk) < 2:
             return None
         source, channel_name = task_name.split("$", maxsplit=1)
+        match source:
+            case "TELEGRAM":
+                source_S = Source.TELEGRAM
+            case _:
+                source_S = Source.TELEGRAM
         tg_task = Task(
-            source=source,
+            source=source_S,
             channel_name=channel_name,
             dt_from=datetime.fromisoformat(tsk[0].decode("utf-8")),
             dt_to=datetime.fromisoformat(tsk[1].decode("utf-8")),
@@ -44,7 +49,7 @@ def serialize_channel_task(task_name: str) -> Task | None:
 def running_new_task_worker(tsk: Task):
     global running_tasks, running_channels
 
-    result = parse_api.delay(tsk.channel_name, tsk.model_dump_json(indent=4))
+    result = parse_api.delay(tsk.channel_name, tsk.model_dump_json())
     running_tasks[result.id] = result
     running_channels[result.id] = tsk.channel_name
 

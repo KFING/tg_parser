@@ -89,6 +89,7 @@ class Channel(BaseModel):
 
 
 class Post(BaseModel):
+    source: Source
     channel_name: str
     title: str | None = None
     post_id: str
@@ -99,7 +100,7 @@ class Post(BaseModel):
 
 
 class Task(BaseModel):
-    source: str
+    source: Source
     channel_name: str
     dt_to: datetime
     dt_from: datetime
