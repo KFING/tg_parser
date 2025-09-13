@@ -92,14 +92,14 @@ def _save_to_file_and_to_qdrant(tmp_post: Post, tmp_posts: list[Post]):
         text = json.load((scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").open())
         text_posts = text["posts"]
         if isinstance(text_posts, list):
-            for i, post in enumerate(parse_data(tmp_post.channel_name, text_posts)):
+            for i, post in enumerate(parse_data(tmp_post.source, tmp_post.channel_name, text_posts)):
                 tmp_posts.insert(i, post)
             tmp = "TMP"
     scrapper_path.mkdir(parents=True, exist_ok=True)
     (scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").write_text(TmpListTgPost(posts=tmp_posts).model_dump_json(indent=4))
     if tmp == "TMP":
-        (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").rename(
-            scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json"
+        (scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").rename(
+            scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json"
         )
     manager_chat.add_post_to_qdrant(scrapper_path_file)
 
@@ -138,7 +138,7 @@ def parse_api(self, channel_name: str, task: dict[str, Any]) -> None:
         logger.debug(f"noooooooooooooooooooooooooooooooooooo -- {text}")
         return
     logger.debug(f"yeeeeeeesssssss************************* -- {text}")
-    posts = parse_data(Source(task['source']), channel_name, text)
+    posts = parse_data(Source.TELEGRAM, channel_name, text)             # ошибка тут
     db = run_on_loop(get_db_main_for_celery())
     run_on_loop(post_crud.create_posts(db, posts))
     save_post(posts)

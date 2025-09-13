@@ -10,7 +10,9 @@ from qdrant_client import QdrantClient
 from langchain import OpenAI
 """
 import asyncio
+import json
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
@@ -26,58 +28,60 @@ from langchain_community.storage import RedisStore
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains import RetrievalQA
 from langchain.vectorstores.base import VectorStoreRetriever
-from qdrant_client import QdrantClient
+from pydantic import HttpUrl
+from qdrant_client import QdrantClient, models
 
 from src import service_deepseek
-from src.dto.feed_rec_info import Post
+from src.dto.feed_rec_info import Post, Source
 from src.dto.qdrant_models import QdrantPostMetadata, QdrantChunkMetadata, PayloadPost, PayloadChunk
 from src.env import settings, SCRAPPER_RESULTS_DIR__TELEGRAM
 from src.service_deepseek import deepseek, prompts
 
 
-def json_loader(text_doc: Document) -> Post:
-    metadata_doc = text_doc.metadata
+def json_loader(text_doc) -> Post:
+    page_content_doc = text_doc.metadata
     return Post(
-    channel_name=metadata_doc['channel_name'],
-    title=metadata_doc['title'],
-    post_id=metadata_doc['post_id'],
-    content=metadata_doc['content'],
-    pb_date=metadata_doc['pb_date'],
-    link=metadata_doc['link'],
+        source=Source(page_content_doc['source']),
+    channel_name=page_content_doc['channel_name'],
+    title=page_content_doc['title'],
+    post_id=page_content_doc['post_id'],
+    content=page_content_doc['content'],
+    pb_date=datetime.fromisoformat(page_content_doc['pb_date']),
+    link=HttpUrl(page_content_doc['link']),
     media=None,
     )
 
 
-def serialize_post(llm_client: OpenAI, embedder_model: str, embedder: CacheBackedEmbeddings, post: Post) -> QdrantPostMetadata:
+def serialize_post(llm_client: OpenAI, embedder_model: str, embedder: CacheBackedEmbeddings, post: Post) -> models.PointStruct:
     summary = asyncio.run(deepseek.prompt(llm_client, prompt=prompts.realtime_summary(post.content)))
     embedding_vector = embedder.embed_documents(summary)
-
-    return QdrantPostMetadata(
-        id=uuid.uuid4(),
-        vector=embedding_vector[-1],
-        payload=PayloadPost(
+    payload = PayloadPost(
             title=post.title,
             summary=summary,
             full_text=post.content,
             embedding_model=embedder_model,
-        ))
+        )
+    return models.PointStruct(
+        id=str(uuid.uuid4()),
+        vector=embedding_vector[-1],
+        payload=payload.model_dump(),)
 
 
-def serialize_chunks(embedder_model: str, embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_splitter: CharacterTextSplitter, text: str) -> Iterator[QdrantChunkMetadata]:
+def serialize_chunks(embedder_model: str, embedder: CacheBackedEmbeddings, post_id: uuid.UUID, text_splitter: CharacterTextSplitter, text: str) -> Iterator[models.PointStruct]:
     text_chunks = text_splitter.split_text(text)
     embedding_vectors = embedder.embed_documents([text for text in text_chunks])
+
     for chunk_id, chunk in enumerate(text_chunks):
-        yield QdrantChunkMetadata(
-            id=uuid.uuid4(),
+        payload = PayloadChunk(
+            post_id=post_id,
+            chunk_id=chunk_id,
+            text=chunk,
+            embedding_model=embedder_model,
+        )
+        yield models.PointStruct(
+            id=str(uuid.uuid4()),
             vector=embedding_vectors[chunk_id],
-            payload=PayloadChunk(
-                post_id=post_id,
-                chunk_id=chunk_id,
-                text=chunk,
-                embedding_model=embedder_model,
-            ))
-
-
+            payload=payload.model_dump())
 
 def add_post_to_qdrant(path: Path, embedder_model: str = "sentence-transformers/all-MiniLM-L6-v2"):
     llm_client = OpenAI(api_key=settings.DEEP_SEEK_API_KEY.get_secret_value(), base_url="https://api.deepseek.com")
@@ -104,26 +108,44 @@ def add_post_to_qdrant(path: Path, embedder_model: str = "sentence-transformers/
         chunk_overlap=100,
         length_function=len,
     )
-    json_text = JSONLoader(path,
-                        jq_schema=".posts[]",
-                        text_content=False, ).load()
+    posts_text = JSONLoader(
+        file_path=path,
+        jq_schema=".posts[]",
+        text_content=False,
+        metadata_func=lambda record, metadata: {
+            "source": record.get("source", ""),
+            "channel_name": record.get("channel_name", ""),
+            "title": record.get("title", ""),
+            "post_id": record.get("post_id", ""),
+            "content": record.get("content", ""),
+            "pb_date": record.get("pb_date", ""),
+            "link": record.get("link", "")
+        }
+    ).load()
+    qdrant.delete_collection(collection_name="posts")
+    qdrant.delete_collection(collection_name="chunks")
+    if not qdrant.collection_exists(collection_name="posts"):
+        qdrant.create_collection(
+            collection_name="posts",
+            vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+        )
+    if not qdrant.collection_exists(collection_name="chunks"):
+        qdrant.create_collection(
+            collection_name="chunks",
+            vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+        )
+    for post in posts_text:
+        s_text = serialize_post(llm_client=llm_client, embedder=embedder, embedder_model=embedder_model, post=json_loader(post))
+        qdrant.upsert(
+            points=[s_text],
+            collection_name='posts',
+        )
 
-
-    s_text = serialize_post(llm_client=llm_client, embedder=embedder, embedder_model=embedder_model, post=json_loader(json_text[0]))
-    qdrant.upsert(
-        points=[s_text],
-        prefer_grpc=True,
-        collection_name='posts',
-        force_recreate=True,
-    )
-
-    s_chunks = serialize_chunks(embedder_model=embedder_model, embedder=embedder, post_id=s_text.id, text_splitter=text_splitter, text=json_text[0].content)
-    qdrant.upsert(
-        points=[s_chunks],
-        prefer_grpc=True,
-        collection_name='chunks',
-        force_recreate=True,
-    )
+        s_chunks = [i for i in serialize_chunks(embedder_model=embedder_model, embedder=embedder, post_id=s_text.id, text_splitter=text_splitter, text=s_text.payload['full_text'])]
+        qdrant.upsert(
+            points=s_chunks,
+            collection_name='chunks',
+        )
 
 
 def initialize_retriever():

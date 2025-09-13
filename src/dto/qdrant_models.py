@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class PayloadPost(BaseModel):
-    title: str
+    title: str | None
     summary: str
     full_text: str
     embedding_model: str
@@ -18,7 +18,7 @@ class QdrantPostMetadata(BaseModel):
 
 
 class PayloadChunk(BaseModel):
-    post_id: uuid.UUID
+    post_id: str
     chunk_id: int
     text: str
     embedding_model: str

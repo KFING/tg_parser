@@ -19,7 +19,7 @@ END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host="redis", port=6379)
 
 
-async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, *, log_extra) -> list[Post]:
+async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name: str, current_id: int, max_empty_responses, *, log_extra) -> list[Post]:
     url = f"https://t.me/s/{channel_name}/{current_id}"
 
     response = await session.get(url)
@@ -46,7 +46,7 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
         logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
         current_id = min(int(msg.post_id) for msg in messages if msg.post_id is not None) - 1
 
-    if current_id <= 1:
+    if int(current_id) <= 1:
         logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
         return all_messages
 
@@ -95,7 +95,7 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
             return None
 
         # Get the highest message ID as our starting point
-        current_id = max(msg.post_id for msg in messages if msg.post_id is not None)
+        current_id = max(int(msg.post_id) for msg in messages if msg.post_id is not None)
         all_messages.extend(messages)
         logger.debug(f"Found initial {len(messages)} messages", extra=log_extra)
 
@@ -158,6 +158,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
 
             # Create message object
             message = Post(
+                source=Source.TELEGRAM,
                 channel_name=channel_id,
                 post_id=str(int(message_id) if message_id.isdigit() else None),
                 content=text,
