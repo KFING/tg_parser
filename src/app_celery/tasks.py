@@ -27,6 +27,15 @@ class TmpListTgPost(BaseModel):
     posts: list[Post]
 
 
+def posts_dbmdl_to_posts(all_posts: list[Post], posts_dbmdl: list[PostDbMdl]) -> list[Post]:
+    posts: list[Post] = []
+    ids_posts_dbmdl = [post_dbmdl.post_id for post_dbmdl in posts_dbmdl]
+    for post in all_posts:
+        if post.post_id in ids_posts_dbmdl:
+            posts.append(post)
+    return posts
+
+
 def parse_data(source: Source, channel_name: str, posts: list[dict[str, str]]) -> list[Post]:
     tg_posts: list[Post] = []
     try:
@@ -84,19 +93,27 @@ def heap_sort(arr: list[Post]):
         heapify(arr, i, 0)
 
 
-def _save_to_file_and_to_qdrant(tmp_post: Post, tmp_posts: list[Post]):
+def _save_to_file_and_to_qdrant(tmp_post: Post, month_posts: list[Post]):
     tmp = ""
+
     scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_name / f"{tmp_post.pb_date.year}"
     scrapper_path_file: Path = (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json")
+    parse_text_parse = month_posts
     if (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").exists():
         text = json.load((scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").open())
         text_posts = text["posts"]
-        if isinstance(text_posts, list):
-            for i, post in enumerate(parse_data(tmp_post.source, tmp_post.channel_name, text_posts)):
-                tmp_posts.insert(i, post)
-            tmp = "TMP"
+        if not isinstance(text_posts, list):
+            return
+        parse_text_posts = parse_data(tmp_post.source, tmp_post.channel_name, text_posts)
+        ids_text_posts = [post.post_id for post in parse_text_posts]
+        for post in month_posts:
+            if post.post_id not in ids_text_posts:
+                parse_text_posts.append(post)
+        tmp = "TMP"
+        heap_sort(parse_text_posts)
+
     scrapper_path.mkdir(parents=True, exist_ok=True)
-    (scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").write_text(TmpListTgPost(posts=tmp_posts).model_dump_json(indent=4))
+    (scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").write_text(TmpListTgPost(posts=parse_text_parse).model_dump_json(indent=4))
     if tmp == "TMP":
         (scrapper_path / f"{tmp}{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").rename(
             scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json"
@@ -105,7 +122,7 @@ def _save_to_file_and_to_qdrant(tmp_post: Post, tmp_posts: list[Post]):
 
 
 def save_post(posts: list[Post]) -> None:
-    heap_sort(posts)
+
     tmp_posts: list[Post] = []
     for post in posts:
         try:
@@ -140,5 +157,5 @@ def parse_api(self, channel_name: str, task: dict[str, Any]) -> None:
     logger.debug(f"yeeeeeeesssssss************************* -- {text}")
     posts = parse_data(Source.TELEGRAM, channel_name, text)             # ошибка тут
     db = run_on_loop(get_db_main_for_celery())
-    run_on_loop(post_crud.create_posts(db, posts))
-    save_post(posts)
+    unique_posts = run_on_loop(post_crud.create_posts(db, posts))
+    save_post(posts_dbmdl_to_posts(posts, unique_posts))

@@ -30,9 +30,10 @@ async def add_post(db: AsyncSession, post: Post) -> PostDbMdl:
 async def create_posts(db: AsyncSession, posts: list[Post]) -> list[PostDbMdl]:
     channel = await channel_crud.get_channel_by_source_by_channel_name(db, posts[-1].source, posts[-1].channel_name)
     old_posts = await get_posts_by_channel_id(db, 1)
+    old_ids = [old_post.post_id for old_post in old_posts]
     unique_posts: list[PostDbMdl] = []
     for post in posts:
-        if post.post_id not in [old_post.id for old_post in old_posts]:
+        if post.post_id not in old_ids:
             unique_posts.append(PostDbMdl(post_id=post.post_id,
                              channel_id=1,
                              pb_date=post.pb_date,
