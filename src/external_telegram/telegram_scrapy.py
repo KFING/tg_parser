@@ -19,7 +19,7 @@ END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host="redis", port=6379)
 
 
-async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name: str, current_id: int, max_empty_responses, *, log_extra) -> list[Post]:
+async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name: str, current_id, max_empty_responses, *, log_extra) -> list[Post]:
     url = f"https://t.me/s/{channel_name}/{current_id}"
 
     response = await session.get(url)
@@ -42,15 +42,22 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
     else:
         consecutive_empty_responses = 0
         new_messages = [msg for msg in messages if msg.post_id not in [m.post_id for m in all_messages]]
+        new_id = min(int(msg.post_id) for msg in messages if msg.post_id is not None) - 1
+        if int(new_id) >= int(current_id):
+            return all_messages
+        current_id = new_id
+        if not new_messages:
+            return all_messages
         all_messages.extend(new_messages)
-        logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
-        current_id = min(int(msg.post_id) for msg in messages if msg.post_id is not None) - 1
+        # logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
+
 
     if int(current_id) <= 1:
         logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
         return all_messages
 
-    await asyncio.sleep(0.0001)  # Delay to avoid hitting rate limits
+    await asyncio.sleep(0.0001)
+    print(len(all_messages))# Delay to avoid hitting rate limits
     return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
 
 
@@ -87,7 +94,7 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
         # Get messages from the first response
         html_text = await response.text()
         messages = extract_messages(html_text, channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
-        logger.debug(f"Found {len(messages)}", extra=log_extra)
+        logger.debug(f"Found {len(messages)} --- {messages[0].pb_date} ********>> {messages[-1].pb_date}", extra=log_extra)
         if not messages:
             await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
@@ -95,17 +102,18 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
             return None
 
         # Get the highest message ID as our starting point
-        current_id = max(int(msg.post_id) for msg in messages if msg.post_id is not None)
-        all_messages.extend(messages)
+        current_id = max(msg.post_id for msg in messages if msg.post_id is not None)
         logger.debug(f"Found initial {len(messages)} messages", extra=log_extra)
 
         # Continue fetching older messages
         # while True:
         await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
-
         await session.close()
         # Save messages to file
+
         if all_messages:
+            for message in all_messages:
+                logger.debug(f"{message.pb_date} --- {message.post_id}", extra=log_extra)
             return all_messages
         await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
         return None
@@ -123,7 +131,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
     """
     soup = BeautifulSoup(html_content, "html.parser")
     messages: list[Post] = []
-    logger.debug("start searching messages", extra=log_extra)
+    # logger.debug("start searching messages", extra=log_extra)
     for message_div in soup.find_all("div", class_="tgme_widget_message"):
         try:
             # Get message ID and channel name
@@ -136,17 +144,18 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             # Get date
             date_elem = message_div.find("time", class_="time")
             utc_dt = as_utc(datetime.fromisoformat(date_elem["datetime"]) if date_elem else datetime.utcnow())
-            if utc_dt >= utc_dt_to:
+            # logger.debug(f"{utc_dt} ++++++++++++++++++", extra=log_extra)
+            if utc_dt > utc_dt_to:
                 logger.debug(
                     f"get_posts_list_channel({channel_name}):: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
                 )
-                continue
-            if utc_dt <= utc_dt_from:
+                return messages
+            if utc_dt < utc_dt_from:
                 logger.debug(
                     f"get_posts_list_channel({channel_name}) :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
                 )
-                return messages
-
+                continue
+            print(f'yes dt({utc_dt})')
             # Get text
             text_elem = message_div.find("div", class_="tgme_widget_message_text")
             text = text_elem.get_text(strip=True) if text_elem else ""
@@ -166,7 +175,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
                 media=None,
             )
 
-            messages.append(message)
+            messages.insert(0, message)
 
         except Exception as e:
             logger.warning(f"Error processing message: {e!s}", extra=log_extra)
