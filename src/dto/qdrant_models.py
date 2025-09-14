@@ -3,8 +3,12 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from src.dto.feed_rec_info import Source
+
 
 class PayloadPost(BaseModel):
+    source: str
+    channel_name: str
     title: str | None
     summary: str
     full_text: str
@@ -18,6 +22,8 @@ class QdrantPostMetadata(BaseModel):
 
 
 class PayloadChunk(BaseModel):
+    source: str
+    channel_name: str
     post_id: str
     chunk_id: int
     text: str

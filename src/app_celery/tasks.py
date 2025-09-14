@@ -152,9 +152,7 @@ def parse_api(self, channel_name: str, task: dict[str, Any]) -> None:
             return
     text = response.json()
     if not isinstance(text, list):
-        logger.debug(f"noooooooooooooooooooooooooooooooooooo -- {text}")
         return
-    logger.debug(f"yeeeeeeesssssss************************* -- {text}")
     posts = parse_data(Source.TELEGRAM, channel_name, text)             # ошибка тут
     db = run_on_loop(get_db_main_for_celery())
     unique_posts = run_on_loop(post_crud.create_posts(db, posts))
