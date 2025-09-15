@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 
 from redis.asyncio import Redis
 
-from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl, InfoParsingParametersApiMdl
 from src.common.moment import as_utc
 from src.dto import redis_models
-from src.dto.feed_rec_info import Source, Channel, TaskStatus, Post
+from src.dto.feed_rec_info import Channel, Post, Source, TaskStatus
 from src.external_telegram import telegram_scrapy
 from src.external_youtube import youtube_scrapy
+from src.parser_app_api.models.request_models.feed_rec_request_info import InfoParsingParametersApiMdl, ParsingParametersApiMdl
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ async def get_channel_info(info_parsing_parameters: InfoParsingParametersApiMdl)
             pass
         case Source.TELEGRAM:
             pass
+
 
 async def get_progress_parsing(info_parsing_parameters: InfoParsingParametersApiMdl, *, log_extra: dict[str, str]) -> int:
     dt_to = await rds.get(redis_models.source_channel_name_dt_to(info_parsing_parameters.source, info_parsing_parameters.channel_name))

@@ -6,7 +6,7 @@ from redis import Redis
 
 from src.app_celery.main import app
 from src.app_celery.tasks import parse_api
-from src.dto.feed_rec_info import Task, Source
+from src.dto.feed_rec_info import Source, Task
 from src.dto.redis_models import RedisTask
 
 rds = Redis()
@@ -71,7 +71,6 @@ def manager_task():
         logger.debug(f"[{datetime.now()}] tasks finished")
         return
     tasks = [task.decode("utf-8") for task in byte_tasks]
-
 
     finished = [tid for tid, r in running_tasks.items() if AsyncResult(tid).ready()]
 

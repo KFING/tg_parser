@@ -50,6 +50,7 @@ async def get_db_main() -> AsyncIterator[AsyncSession]:
     async with db.session() as session:
         yield session
 
+
 async def get_db_main_for_celery() -> AsyncSession:
     db = get_db_main_manager()
     async with db.session() as session:

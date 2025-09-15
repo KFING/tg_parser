@@ -27,6 +27,7 @@ async def main(*, log_extra: dict[str, str]) -> None:
     st.header("SCRAPPER")
     with st.form("POST"):
         from src.dto.feed_rec_info import Source
+
         source = st.selectbox("Source", (Source.YOUTUBE, Source.TELEGRAM))
         channel_name = st.text_input("Channel name", help="t.me/CHANNEL_NAME")
         time_period = st.date_input("Select time period", (START_OF_EPOCH, END_OF_EPOCH), START_OF_EPOCH, END_OF_EPOCH, format="MM.DD.YYYY")

@@ -1,11 +1,9 @@
-import asyncio
 import logging
 from datetime import datetime
 
 import streamlit as st
 from redis.asyncio import Redis
 
-from src import log
 from src.app_api.dependencies import DBM
 from src.app_dash.run_dash_page import run_dash_page
 from src.app_dash.utils.streamlit import st_no_top_borders

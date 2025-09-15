@@ -44,7 +44,6 @@ class FeedRecPostTranscription(BaseModel):
     parsed: list[tuple[timedelta, str]]
 
 
-
 class RawPostMediaExt(RawPostMedia):
     quality_raw: str | None  # for images is NONE
     preview: RawPostMedia | None

@@ -14,6 +14,7 @@ _TP = ParamSpec("_TP")
 _TR = TypeVar("_TR")
 TR = TypeVar("TR")
 
+
 def sync_to_async(func: Callable[_P, _T]) -> Callable[_P, Coroutine[Any, Any, _T]]:
     """Creates a coroutine from a synchronous function."""
 
@@ -25,16 +26,12 @@ def sync_to_async(func: Callable[_P, _T]) -> Callable[_P, Coroutine[Any, Any, _T
     return _sync_to_async
 
 
-
-
-
 async def run_list(tasks: list[Coroutine[None, None, TR]], size: int) -> list[TR]:
     results = []
     for i in range(0, len(tasks), size):
         chunk = tasks[i * size : (i + 1) * size]
         results += list(await asyncio.gather(*chunk))
     return results
-
 
 
 def run_on_loop(some: Coroutine[Any, Any, _TR]) -> _TR:

@@ -2,7 +2,7 @@ from datetime import datetime
 
 import httpx
 
-from src.dto.feed_rec_info import Source, Task
+from src.dto.feed_rec_info import Source
 from src.parser_app_api.models.request_models.feed_rec_request_info import ParsingParametersApiMdl
 
 task = ParsingParametersApiMdl(

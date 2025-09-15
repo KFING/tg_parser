@@ -4,7 +4,6 @@ import logging
 import streamlit as st
 from redis.asyncio import Redis
 
-from src import log
 from src.app_dash.utils.streamlit import st_no_top_borders
 from src.dto.feed_rec_info import Source
 
@@ -13,6 +12,7 @@ logger = logging.getLogger(__name__)
 rds = Redis()
 
 mdl_name = "src.app_dash.dashboard.pages.101_Checker"
+
 
 async def main() -> None:
     st.set_page_config(

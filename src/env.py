@@ -5,8 +5,8 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Final
 
-from pydantic import SecretStr, HttpUrl, PostgresDsn
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import HttpUrl, PostgresDsn, SecretStr
+from pydantic_settings import BaseSettings
 
 ROOT_PATH = Path(__file__).parent.parent
 
@@ -44,7 +44,6 @@ class LogLevel(Enum):
 
 
 class Settings(BaseSettings):
-
     ROOT_PATH: Path = ROOT_PATH
     LOG_LVL: LogLevel = LogLevel.INFO
 

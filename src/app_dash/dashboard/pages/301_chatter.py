@@ -12,9 +12,11 @@ logger = logging.getLogger(__name__)
 rds = Redis()
 mdl_name = "src.app_dash.dashboard.pages.301_chatter"
 
+
 @st.cache_resource
 async def init_qa():
     return manager_chat.initialize_retriever()
+
 
 async def main() -> None:
     st.set_page_config(
@@ -27,16 +29,14 @@ async def main() -> None:
     st.header("CHAT WITH CONTENT CREATORS")
     embedding_list = manager_chat.file_loader_init()
     print(type(embedding_list))
-    print('-------------------------------------')
+    print("-------------------------------------")
     print(len(embedding_list))
-    print('-------------------------------------')
+    print("-------------------------------------")
     print(embedding_list)
-    print('-------------------------------------')
+    print("-------------------------------------")
     print(embedding_list[0])
-    print('-------------------------------------')
+    print("-------------------------------------")
     print(embedding_list[-1])
-
-
 
 
 asyncio.run(main())

@@ -7,12 +7,12 @@ from typing import Any
 import httpx
 from pydantic import BaseModel, HttpUrl
 
-from src.app_api.dependencies import get_db_main, get_db_main_for_celery
+from src.app_api.dependencies import get_db_main_for_celery
 from src.app_celery.main import app
 from src.common.async_utils import run_on_loop
 from src.db_main.cruds import post_crud
 from src.db_main.models.post import PostDbMdl
-from src.dto.feed_rec_info import Post, Task, Source
+from src.dto.feed_rec_info import Post, Source
 from src.env import SCRAPPER_RESULTS_DIR
 from src.service_chat_bot import manager_chat
 
@@ -48,7 +48,7 @@ def parse_data(source: Source, channel_name: str, posts: list[dict[str, str]]) -
                     content=post["content"],
                     pb_date=datetime.fromisoformat(post["pb_date"]),
                     link=HttpUrl(post["link"]),
-                    #media=post["media"],
+                    # media=post["media"],
                     media=None,
                 )
             )
@@ -97,7 +97,7 @@ def _save_to_file_and_to_qdrant(tmp_post: Post, month_posts: list[Post]):
     tmp = ""
 
     scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_name / f"{tmp_post.pb_date.year}"
-    scrapper_path_file: Path = (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json")
+    scrapper_path_file: Path = scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json"
     parse_text_parse = month_posts
     if (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").exists():
         text = json.load((scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").open())
@@ -122,7 +122,6 @@ def _save_to_file_and_to_qdrant(tmp_post: Post, month_posts: list[Post]):
 
 
 def save_post(posts: list[Post]) -> None:
-
     tmp_posts: list[Post] = []
     for post in posts:
         try:
@@ -153,7 +152,7 @@ def parse_api(self, channel_name: str, task: dict[str, Any]) -> None:
     text = response.json()
     if not isinstance(text, list):
         return
-    posts = parse_data(Source.TELEGRAM, channel_name, text)             # ошибка тут
+    posts = parse_data(Source.TELEGRAM, channel_name, text)  # ошибка тут
     db = run_on_loop(get_db_main_for_celery())
     unique_posts = run_on_loop(post_crud.create_posts(db, posts))
     save_post(posts_dbmdl_to_posts(posts, unique_posts))

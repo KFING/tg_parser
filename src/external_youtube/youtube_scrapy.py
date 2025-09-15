@@ -1,23 +1,20 @@
 from __future__ import annotations
-from datetime import datetime, timezone, date
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Any
 
-from pydantic import HttpUrl
+from datetime import date, datetime, timezone
 
 import yt_dlp
-
-from src.common.async_utils import sync_to_async, run_on_loop
-from src.dto import redis_models
-from src.dto.feed_rec_info import Source, TaskStatus, Post, Channel, RawPostMedia, MediaFormat
+from pydantic import HttpUrl
 from redis.asyncio import Redis
+
+from src.common.async_utils import run_on_loop, sync_to_async
+from src.dto import redis_models
+from src.dto.feed_rec_info import Channel, MediaFormat, Post, RawPostMedia, Source, TaskStatus
 
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 
 
 rds = Redis(host="redis", port=6379)
-
 
 
 def _build_ydl_opts(**overrides) -> dict:
@@ -32,7 +29,7 @@ def _build_ydl_opts(**overrides) -> dict:
     return base
 
 
-def _parse_upload_date(s: Optional[str]) -> datetime | None:
+def _parse_upload_date(s: str | None) -> datetime | None:
     if not s:
         return None
     try:
@@ -41,9 +38,9 @@ def _parse_upload_date(s: Optional[str]) -> datetime | None:
         return None
 
 
-def _audio_only_formats(formats: List[dict]) -> RawPostMedia | None:
+def _audio_only_formats(formats: list[dict]) -> RawPostMedia | None:
     for f in formats or []:
-        if f.get("audio_ext") == 'webm' and f.get("url"):
+        if f.get("audio_ext") == "webm" and f.get("url"):
             return RawPostMedia(
                 format=MediaFormat.WEBM,
                 url=HttpUrl(f["url"]),
@@ -83,16 +80,15 @@ def get_channel_info(channel_url: str) -> Channel:
             source=Source.YOUTUBE,
             link=HttpUrl(info.get("channel_name") or channel_url),
             channel_id=info.get("channel_id") or info.get("uploader_id"),
-            channel_name=info.get("channel") or None,   # не всегда присутствует как @handle
+            channel_name=info.get("channel") or None,  # не всегда присутствует как @handle
             description=description,
         )
 
 
 @sync_to_async
-def iter_channel_video_ids(channel_name: str) -> List[str]:
-
+def iter_channel_video_ids(channel_name: str) -> list[str]:
     with yt_dlp.YoutubeDL(_build_ydl_opts(cookiesfrombrowser=("firefox", None, None, None), extract_flat=True)) as ydl:
-        listing = ydl.extract_info(f'https://www.youtube.com/@{channel_name}', download=False)
+        listing = ydl.extract_info(f"https://www.youtube.com/@{channel_name}", download=False)
         entries = listing.get("entries") or []
         ids = []
         for e in entries:
@@ -104,10 +100,9 @@ def iter_channel_video_ids(channel_name: str) -> List[str]:
 
 
 @sync_to_async
-def get_all_videos(channel_name: str) -> List[Post]:
-
+def get_all_videos(channel_name: str) -> list[Post]:
     video_ids = run_on_loop(iter_channel_video_ids(channel_name))
-    out: List[Post] = []
+    out: list[Post] = []
 
     with yt_dlp.YoutubeDL(_build_ydl_opts(cookiesfrombrowser=("firefox", None, None, None))) as ydl:
         for vid in video_ids:
@@ -120,10 +115,7 @@ def get_all_videos(channel_name: str) -> List[Post]:
     return out
 
 
-async def get_channel_posts_list(
-    channel_name: str, *, log_extra: dict[str, str]
-) -> list[Post] | None:
-
+async def get_channel_posts_list(channel_name: str, *, log_extra: dict[str, str]) -> list[Post] | None:
     dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.TELEGRAM, channel_name))
     if not dt_to:
         await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
@@ -137,7 +129,7 @@ async def get_channel_posts_list(
     utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
 
     all_videos = await get_all_videos(channel_name)
-    in_range: List[Post] = []
+    in_range: list[Post] = []
     for video in all_videos:
         if not video.upload_date:
             continue

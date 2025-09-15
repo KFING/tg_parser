@@ -1,9 +1,6 @@
 import uuid
-from datetime import datetime
 
 from pydantic import BaseModel
-
-from src.dto.feed_rec_info import Source
 
 
 class PayloadPost(BaseModel):

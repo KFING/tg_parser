@@ -9,7 +9,7 @@ from redis.asyncio import Redis
 
 from src.common.moment import as_utc
 from src.dto import redis_models
-from src.dto.feed_rec_info import Source, TaskStatus, Post
+from src.dto.feed_rec_info import Post, Source, TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,18 @@ END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 rds = Redis(host="redis", port=6379)
 
 
-async def get_all_messages(consecutive_empty_responses, all_messages, session, channel_name: str, current_id, max_empty_responses, *, log_extra) -> list[Post]:
+async def get_all_messages(
+    utc_dt_to: datetime,
+    utc_dt_from: datetime,
+    consecutive_empty_responses,
+    all_messages,
+    session,
+    channel_name: str,
+    current_id,
+    max_empty_responses,
+    *,
+    log_extra,
+) -> list[Post]:
     url = f"https://t.me/s/{channel_name}/{current_id}"
 
     response = await session.get(url)
@@ -31,7 +42,7 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
     dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.TELEGRAM, channel_name))
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
     utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
-    messages = extract_messages(await response.text(), channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
+    messages = extract_messages(await response.text(), channel_name, log_extra=log_extra)
 
     if not messages:
         consecutive_empty_responses += 1
@@ -41,24 +52,34 @@ async def get_all_messages(consecutive_empty_responses, all_messages, session, c
             return all_messages
     else:
         consecutive_empty_responses = 0
-        new_messages = [msg for msg in messages if msg.post_id not in [m.post_id for m in all_messages]]
+        new_messages: list[Post] = []
+        for msg in messages:
+            if msg.pb_date > utc_dt_to:
+                logger.debug(f"get_posts_list_channel({channel_name}):: dt({msg.pb_date}) not fit to dt_to({utc_dt_to})", extra=log_extra)
+                continue
+            if msg.pb_date < utc_dt_from:
+                logger.debug(f"get_posts_list_channel({channel_name}) :: dt({msg.pb_date}) not fit to dt_from({utc_dt_from})", extra=log_extra)
+                all_messages.extend(new_messages)
+                return all_messages
+            if msg.post_id not in [m.post_id for m in all_messages]:
+                new_messages.append(msg)
+        # new_messages = [msg for msg in messages if msg.post_id not in [m.post_id for m in all_messages]]
         new_id = min(int(msg.post_id) for msg in messages if msg.post_id is not None) - 1
+
         if int(new_id) >= int(current_id):
             return all_messages
         current_id = new_id
-        if not new_messages:
-            return all_messages
         all_messages.extend(new_messages)
         # logger.debug(f"Fetched {len(new_messages)} new messages. Total: {len(all_messages)} -- {channel_name}", extra=log_extra)
-
 
     if int(current_id) <= 1:
         logger.warning("Reached the beginning of the channel. Stopping.", extra=log_extra)
         return all_messages
 
     await asyncio.sleep(0.0001)
-    print(len(all_messages))# Delay to avoid hitting rate limits
-    return await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
+    return await get_all_messages(
+        utc_dt_to, utc_dt_from, consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra
+    )
 
 
 async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) -> list[Post] | None:
@@ -93,21 +114,31 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
             return None
         # Get messages from the first response
         html_text = await response.text()
-        messages = extract_messages(html_text, channel_name, as_utc(utc_dt_to), as_utc(utc_dt_from), log_extra=log_extra)
-        logger.debug(f"Found {len(messages)} --- {messages[0].pb_date} ********>> {messages[-1].pb_date}", extra=log_extra)
+        messages = extract_messages(html_text, channel_name, log_extra=log_extra)
+
         if not messages:
             await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
             logger.debug("No messages found in the channel", extra=log_extra)
             await session.close()
             return None
-
+        logger.debug(f"Found {len(messages)} --- {messages[0].pb_date}", extra=log_extra)
         # Get the highest message ID as our starting point
         current_id = max(msg.post_id for msg in messages if msg.post_id is not None)
         logger.debug(f"Found initial {len(messages)} messages", extra=log_extra)
 
         # Continue fetching older messages
         # while True:
-        await get_all_messages(consecutive_empty_responses, all_messages, session, channel_name, current_id, max_empty_responses, log_extra=log_extra)
+        await get_all_messages(
+            as_utc(utc_dt_to),
+            as_utc(utc_dt_from),
+            consecutive_empty_responses,
+            all_messages,
+            session,
+            channel_name,
+            current_id,
+            max_empty_responses,
+            log_extra=log_extra,
+        )
         await session.close()
         # Save messages to file
 
@@ -125,7 +156,7 @@ async def get_channel_messages(channel_name: str, *, log_extra: dict[str, str]) 
         return None
 
 
-def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, utc_dt_from: datetime, *, log_extra: dict[str, str]) -> list[Post]:
+def extract_messages(html_content: str, channel_id: str, *, log_extra: dict[str, str]) -> list[Post]:
     """
     Extract messages from HTML content using BeautifulSoup
     """
@@ -145,17 +176,7 @@ def extract_messages(html_content: str, channel_id: str, utc_dt_to: datetime, ut
             date_elem = message_div.find("time", class_="time")
             utc_dt = as_utc(datetime.fromisoformat(date_elem["datetime"]) if date_elem else datetime.utcnow())
             # logger.debug(f"{utc_dt} ++++++++++++++++++", extra=log_extra)
-            if utc_dt > utc_dt_to:
-                logger.debug(
-                    f"get_posts_list_channel({channel_name}):: dt({utc_dt}) not fit to dt_to({utc_dt_to})", extra=log_extra
-                )
-                return messages
-            if utc_dt < utc_dt_from:
-                logger.debug(
-                    f"get_posts_list_channel({channel_name}) :: dt({utc_dt}) not fit to dt_from({utc_dt_from})", extra=log_extra
-                )
-                continue
-            print(f'yes dt({utc_dt})')
+            print(f"yes dt({utc_dt})")
             # Get text
             text_elem = message_div.find("div", class_="tgme_widget_message_text")
             text = text_elem.get_text(strip=True) if text_elem else ""
