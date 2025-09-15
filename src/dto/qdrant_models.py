@@ -13,6 +13,7 @@ class PayloadPost(BaseModel):
     summary: str
     full_text: str
     embedding_model: str
+    page_content: str
 
 
 class QdrantPostMetadata(BaseModel):
@@ -28,6 +29,7 @@ class PayloadChunk(BaseModel):
     chunk_id: int
     text: str
     embedding_model: str
+    page_content: str
 
 
 class QdrantChunkMetadata(BaseModel):

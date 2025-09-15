@@ -62,7 +62,8 @@ def serialize_post(llm_client: OpenAI, embedder_model: str, embedder: CacheBacke
             summary=summary,
             full_text=post.content,
             embedding_model=embedder_model,
-        )
+            page_content=summary
+    )
     return models.PointStruct(
         id=str(uuid.uuid4()),
         vector=embedding_vector[-1],
@@ -81,6 +82,7 @@ def serialize_chunks(embedder_model: str, embedder: CacheBackedEmbeddings, text_
             chunk_id=chunk_id,
             text=chunk,
             embedding_model=embedder_model,
+            page_content=chunk,
         )
         yield models.PointStruct(
             id=str(uuid.uuid4()),

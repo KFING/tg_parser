@@ -22,13 +22,12 @@ Text: [{text}] """
 
 def realtime_answer(
     user_answer: str,
-    history: list[str],
+    history: list[str] = None,
     target: str = "you're a voice sales consultant who sells elephants",
 ) -> str:
     """должен быть сконфигурирован относительно текущего саммари, последних N ответов и запросов и первоначальной цели"""
-    return f"""{target}. User said {user_answer}, give an answer to this sentence,
-    given the history of communication with the user: {history}.use about 30 words.
-    don't use extra words and characters: */-#@№$%^&()[]+_"""
+    return f"""Use the following pieces of context to answer the question at the end. If you dont know the answer, just say that you dont know, dont try to make an answer, don't use extra words and characters: */-#@№$%^&()[]+_.
+Question: {user_answer}"""
 
 
 def objective_table(user_answer: str, user_questions: list[str]) -> str:
