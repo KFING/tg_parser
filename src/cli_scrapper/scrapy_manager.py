@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
-rds = Redis(host="redis", port=6379)
+rds = Redis(host="localhost", port=60379)
 
 
 async def get_channel_info(info_parsing_parameters: InfoParsingParametersApiMdl) -> Channel | None:

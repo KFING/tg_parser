@@ -14,7 +14,7 @@ START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 
 
-rds = Redis(host="redis", port=6379)
+rds = Redis(host="localhost", port=60379)
 
 
 def _build_ydl_opts(**overrides) -> dict:
@@ -89,7 +89,7 @@ def get_channel_info(channel_url: str) -> Channel:
 def iter_channel_video_ids(channel_name: str) -> list[str]:
     with yt_dlp.YoutubeDL(_build_ydl_opts(cookiesfrombrowser=("firefox", None, None, None), extract_flat=True)) as ydl:
         listing = ydl.extract_info(f"https://www.youtube.com/@{channel_name}", download=False)
-        entries = listing.get("entries") or []
+        entries = listing["entries"] or []
         ids = []
         for e in entries:
             if e.get("ie_key") == "Youtube" and e.get("id"):
@@ -103,7 +103,7 @@ def iter_channel_video_ids(channel_name: str) -> list[str]:
 def get_all_videos(channel_name: str) -> list[Post]:
     video_ids = run_on_loop(iter_channel_video_ids(channel_name))
     out: list[Post] = []
-
+    print(f"Found {len(video_ids)} videos")
     with yt_dlp.YoutubeDL(_build_ydl_opts(cookiesfrombrowser=("firefox", None, None, None))) as ydl:
         for vid in video_ids:
             url = f"https://www.youtube.com/watch?v={vid}"
@@ -116,18 +116,17 @@ def get_all_videos(channel_name: str) -> list[Post]:
 
 
 async def get_channel_posts_list(channel_name: str, *, log_extra: dict[str, str]) -> list[Post] | None:
-    dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.TELEGRAM, channel_name))
+    dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.YOUTUBE, channel_name))
     if not dt_to:
-        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.YOUTUBE, channel_name), TaskStatus.free.value)
         return None
-    dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.TELEGRAM, channel_name))
+    dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.YOUTUBE, channel_name))
     if not dt_from:
-        await rds.set(redis_models.source_channel_name_status(Source.TELEGRAM, channel_name), TaskStatus.free.value)
+        await rds.set(redis_models.source_channel_name_status(Source.YOUTUBE, channel_name), TaskStatus.free.value)
         return None
-
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
     utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
-
+    print("start")
     all_videos = await get_all_videos(channel_name)
     in_range: list[Post] = []
     for video in all_videos:
@@ -137,4 +136,5 @@ async def get_channel_posts_list(channel_name: str, *, log_extra: dict[str, str]
             in_range.append(video)
 
     in_range.sort(key=lambda v: v.upload_date or date.min, reverse=True)
+    print("stop")
     return in_range

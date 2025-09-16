@@ -96,7 +96,7 @@ def heap_sort(arr: list[Post]):
 def _save_to_file_and_to_qdrant(tmp_post: Post, month_posts: list[Post]):
     tmp = ""
 
-    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.channel_name / f"{tmp_post.pb_date.year}"
+    scrapper_path: Path = SCRAPPER_RESULTS_DIR / tmp_post.source.value / tmp_post.channel_name / f"{tmp_post.pb_date.year}"
     scrapper_path_file: Path = scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json"
     parse_text_parse = month_posts
     if (scrapper_path / f"{tmp_post.channel_name}__{tmp_post.pb_date.month}.json").exists():

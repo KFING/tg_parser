@@ -5,7 +5,7 @@ app = Celery("main", broker="redis://localhost:6379/0", backend="redis://localho
 app.conf.beat_schedule = {}
 app.conf.timezone = "UTC"
 
-app.autodiscover_tasks(["src.app_celery.tasks", "src.app_celery.manager"])
+app.autodiscover_tasks(["src.app_celery.worker_of_parsing", "src.app_celery.worker_of_download", "src.app_celery.worker_of_transcript", "src.app_celery.manager"])
 
 app.conf.beat_schedule = {
     "run-manager-every-minute": {

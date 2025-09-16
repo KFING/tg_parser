@@ -133,6 +133,8 @@ def add_post_to_qdrant(path: Path, embedder_model: str = "sentence-transformers/
         )
     for post in posts_text:
         j_post = json_loader(post)
+        if not isinstance(post.content, str):
+            continue
         s_text = serialize_post(llm_client=llm_client, embedder=embedder, embedder_model=embedder_model, post=j_post)
         qdrant.upsert(
             points=[s_text],

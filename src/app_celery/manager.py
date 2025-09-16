@@ -5,7 +5,7 @@ from celery.result import AsyncResult
 from redis import Redis
 
 from src.app_celery.main import app
-from src.app_celery.tasks import parse_api
+from src.app_celery.worker_of_parsing import parse_api
 from src.dto.feed_rec_info import Source, Task
 from src.dto.redis_models import RedisTask
 
