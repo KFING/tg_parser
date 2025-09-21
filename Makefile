@@ -87,7 +87,7 @@ app_api:
 		--use-colors \
 		--reload \
 		--host 0.0.0.0 \
-		--port 40001 \
+		--port 40002 \
 		--log-level error \
 		--no-access-log
 

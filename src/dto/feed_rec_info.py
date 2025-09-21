@@ -31,21 +31,25 @@ class MediaFormat(StrEnum):
     DOC = "doc"
     OTHER_FORMAT = "other_format"
 
+class MediaResolution(StrEnum):
+    AUDIO_ONLY = "audio only"
+    OTHER_RESOLUTION= "other_format"
+
 
 class RawPostMedia(BaseModel):
     url: HttpUrl
-    format: MediaFormat
+    resolution: MediaResolution
+    audio_ext: MediaFormat
     downloaded_file: Path | HttpUrl | None
 
 
 class FeedRecPostTranscription(BaseModel):
     lang: Lang
     raw: str
-    parsed: list[tuple[timedelta, str]]
+    parsed: str
 
 
-class RawPostMediaExt(RawPostMedia):
-    quality_raw: str | None  # for images is NONE
+class RawPostMediaExt(BaseModel):
     preview: RawPostMedia | None
     transcription: list[FeedRecPostTranscription]
 
@@ -95,7 +99,7 @@ class Post(BaseModel):
     content: str
     pb_date: datetime
     link: HttpUrl
-    media: list[RawPostMediaExt] | None
+    media: RawPostMediaExt | None
 
 
 class Task(BaseModel):
