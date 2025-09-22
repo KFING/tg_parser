@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
-rds = Redis(host="redis", port=6379)
+rds = Redis(host="localhost", port=60379)
 
 
 async def get_all_messages(
@@ -190,6 +190,8 @@ def extract_messages(html_content: str, channel_id: str, *, log_extra: dict[str,
                 source=Source.TELEGRAM,
                 channel_name=channel_id,
                 post_id=str(int(message_id) if message_id.isdigit() else None),
+                title=None,
+                description=None,
                 content=text,
                 pb_date=utc_dt,
                 link=HttpUrl(f"https://t.me/{channel_name}/{message_id}"),

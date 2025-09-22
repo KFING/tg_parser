@@ -30,11 +30,10 @@ def _build_ydl_opts(**overrides) -> dict:
 
 
 def _parse_upload_date(s: str | None) -> datetime | None:
-    print("here")
     if not s:
         return None
     try:
-        return datetime.strptime(s, "%Y%m%data")
+        return datetime.strptime(s, "%Y%m%d").replace(tzinfo=timezone.utc)
     except ValueError:
         return None
 
@@ -42,7 +41,6 @@ def _parse_upload_date(s: str | None) -> datetime | None:
 def _audio_only_formats(formats: list[dict]) -> RawPostMediaExt | None:
 
     for f in formats:
-        print(f'{f["resolution"]} {f["audio_ext"]} {HttpUrl(f["url"])}')
         if f["resolution"] != MediaResolution.AUDIO_ONLY.value:
             continue
         if f["audio_ext"] == MediaFormat.WEBM.value and f["url"]:
@@ -60,18 +58,16 @@ def _audio_only_formats(formats: list[dict]) -> RawPostMediaExt | None:
 
 
 def _video_info_from_infodict(channel_name: str, data: dict) -> Post:
-    print("goooort")
-    media = _audio_only_formats(data["formats"] or [])
-    print("grrrrrrrr")
     post = Post(
         source=Source.YOUTUBE,
         channel_name=channel_name,
         title=data["fulltitle"],
         post_id=data["id"],
-        content=data["description"],
+        description=data["description"],
+        content=None,
         pb_date=_parse_upload_date(data["upload_date"]),
         link=HttpUrl(data["uploader_url"]),
-        media=media,
+        media=_audio_only_formats(data["formats"] or []),
     )
     print("geeeeet")
     return post
@@ -112,10 +108,8 @@ def get_channel_posts_info(channel_name: str) -> list[Post]:
             try:
                 out.append(_video_info_from_infodict(channel_name, e))
 
-                print("yep")
             except Exception:
                 continue
-        print(len(out))
         return out
 
 

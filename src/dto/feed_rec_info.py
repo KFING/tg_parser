@@ -94,9 +94,10 @@ class Channel(BaseModel):
 class Post(BaseModel):
     source: Source
     channel_name: str
-    title: str | None = None
     post_id: str
-    content: str
+    title: str | None
+    description: str | None
+    content: str | None
     pb_date: datetime
     link: HttpUrl
     media: RawPostMediaExt | None
