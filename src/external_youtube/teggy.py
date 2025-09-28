@@ -1,93 +1,20 @@
-from datetime import date, datetime, timezone
-
-import yt_dlp
-from pydantic import HttpUrl
-from redis.asyncio import Redis
-from yt_dlp import DateRange
-
-from src.common.async_utils import run_on_loop, sync_to_async
-from src.dto import redis_models
-from src.dto.feed_rec_info import Channel, MediaFormat, Post, RawPostMedia, Source, TaskStatus, MediaResolution, RawPostMediaExt
-
-START_OF_EPOCH = datetime(2025, 7, 21, tzinfo=timezone.utc)
-END_OF_EPOCH = datetime(2100, 7, 23, tzinfo=timezone.utc)
+# pip install pysrt
+import pysrt
 
 
+def extract_text_with_pysrt(srt_file_path: str) -> str:
+    subs = pysrt.open(srt_file_path)
+    text_lines = []
+
+    for sub in subs:
+        # Удаляем текст в скобках и лишние пробелы
+        clean_text = re.sub(r'\[.*?\]', '', sub.text).strip()
+        if clean_text:
+            text_lines.append(clean_text)
+
+    return ' '.join(text_lines)
 
 
-def _build_ydl_opts() -> dict:
-    base = {
-        "quiet": True,
-        "no_warnings": True,
-        "skip_download": True,
-        "extract_flat": False,
-        "ignoreerrors": True,
-        "subtitlesformat": "srt",
-        "writeautomaticsub": True,
-        "daterange": DateRange("20000101", "21000101"),
-
-    }
-    return base
-
-
-def _parse_upload_date(s: str | None) -> datetime | None:
-    if not s:
-        return None
-    try:
-        return datetime.strptime(s, "%Y%m%d").replace(tzinfo=timezone.utc)
-    except ValueError:
-        return None
-
-
-def _audio_only_formats(formats: list[dict]) -> RawPostMediaExt | None:
-
-    for f in formats:
-        if f["resolution"] != MediaResolution.AUDIO_ONLY.value:
-            continue
-        if f["audio_ext"] == MediaFormat.WEBM.value and f["url"]:
-
-            preview = RawPostMedia(
-                url=HttpUrl(f["url"]),
-                resolution=MediaResolution.AUDIO_ONLY,
-                audio_ext=MediaFormat.WEBM,
-                downloaded_file=None,
-            )
-            return RawPostMediaExt(
-                preview=preview,
-                transcription=[]
-            )
-
-
-def _video_info_from_infodict(channel_name: str, data: dict) -> Post:
-    post = Post(
-        source=Source.YOUTUBE,
-        channel_name=channel_name,
-        title=data["fulltitle"],
-        post_id=data["id"],
-        description=data["description"],
-        content=None,
-        pb_date=_parse_upload_date(data["upload_date"]),
-        link=HttpUrl(data["uploader_url"]),
-        media=_audio_only_formats(data["formats"] or []),
-    )
-    print("geeeeet")
-    return post
-
-
-def get_channel_posts_info(channel_name: str) -> list[Post]:
-    with yt_dlp.YoutubeDL(_build_ydl_opts()) as ydl:
-        listing = ydl.extract_info(f"https://www.youtube.com/@jp-f6s", download=True)
-        entries = listing["entries"] or []
-        out: list[Post] = []
-        for e in entries:
-            try:
-                out.append(_video_info_from_infodict(channel_name, e))
-
-            except Exception:
-                continue
-        return out
-
-posts = get_channel_posts_info("jp-f6s")
-
-for post in posts:
-    print(post.pb_date)
+# Использование
+text = extract_text_with_pysrt('subtitles.srt')
+print(text)

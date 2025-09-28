@@ -16,8 +16,19 @@ END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
 
 rds = Redis(host="localhost", port=60379)
 
+def _build_ydl_opts_for_video_subtitle() -> dict:
+    base = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "extract_flat": False,
+        "ignoreerrors": True,
+        "subtitlesformat": "srt",
+        "writeautomaticsub": True,
+    }
+    return base
 
-def _build_ydl_opts(**overrides) -> dict:
+def _build_ydl_opts_for_videos() -> dict:
     base = {
         "quiet": True,
         "no_warnings": True,
@@ -25,7 +36,6 @@ def _build_ydl_opts(**overrides) -> dict:
         "extract_flat": False,
         "ignoreerrors": True,
     }
-    base.update(overrides)
     return base
 
 
@@ -100,7 +110,7 @@ def get_channel_info(channel_url: str) -> Channel:
 
 @sync_to_async
 def get_channel_posts_info(channel_name: str) -> list[Post]:
-    with yt_dlp.YoutubeDL(_build_ydl_opts()) as ydl:
+    with yt_dlp.YoutubeDL(_build_ydl_opts_for_videos()) as ydl:
         listing = ydl.extract_info(f"https://www.youtube.com/@{channel_name}", download=False)
         entries = listing["entries"] or []
         out: list[Post] = []
