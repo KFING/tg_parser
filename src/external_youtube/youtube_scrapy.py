@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timezone
 
 import yt_dlp
@@ -9,6 +10,9 @@ from redis.asyncio import Redis
 from src.common.async_utils import run_on_loop, sync_to_async
 from src.dto import redis_models
 from src.dto.feed_rec_info import Channel, MediaFormat, Post, RawPostMedia, Source, TaskStatus, MediaResolution, RawPostMediaExt
+
+logger = logging.getLogger(__name__)
+
 
 START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
 END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
@@ -150,16 +154,16 @@ async def get_channel_posts_list(channel_name: str, *, log_extra: dict[str, str]
         return None
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
     utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
-    print("start")
+    logger.debug("get_channel_posts_list :: start to finding yt posts", extra=log_extra)
     all_videos = await get_channel_posts_info(channel_name)
-    print(f"found {len(all_videos)} videos")
+    logger.debug(f"get_channel_posts_list :: found {len(all_videos)} videos", extra=log_extra)
     in_range: list[Post] = []
     for video in all_videos:
         if not video.pb_date:
             continue
         if utc_dt_from <= video.pb_date <= utc_dt_to:
             in_range.append(video)
-    print(f"found in_range {len(in_range)} videos")
+    logger.debug(f"get_channel_posts_list :: found in_range {len(in_range)} videos", extra=log_extra)
     in_range.sort(key=lambda v: v.pb_date or date.min, reverse=True)
-    print("stop")
+    logger.debug("get_channel_posts_list :: finish finding posts --> start to download subtitles", extra=log_extra)
     return in_range
