@@ -3,28 +3,30 @@ from datetime import date, datetime, timezone
 import yt_dlp
 from pydantic import HttpUrl
 from redis.asyncio import Redis
+from yt_dlp import DateRange
 
 from src.common.async_utils import run_on_loop, sync_to_async
 from src.dto import redis_models
 from src.dto.feed_rec_info import Channel, MediaFormat, Post, RawPostMedia, Source, TaskStatus, MediaResolution, RawPostMediaExt
 
-START_OF_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
-END_OF_EPOCH = datetime(2100, 1, 1, tzinfo=timezone.utc)
+START_OF_EPOCH = datetime(2025, 7, 21, tzinfo=timezone.utc)
+END_OF_EPOCH = datetime(2100, 7, 23, tzinfo=timezone.utc)
 
 
-rds = Redis(host="localhost", port=60379)
 
 
-def _build_ydl_opts(**overrides) -> dict:
+def _build_ydl_opts() -> dict:
     base = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
         "ignoreerrors": True,
-        "proxy": "http://localhost:10000"
+        "subtitlesformat": "srt",
+        "writeautomaticsub": True,
+        "daterange": DateRange("20000101", "21000101"),
+
     }
-    base.update(overrides)
     return base
 
 
@@ -74,7 +76,7 @@ def _video_info_from_infodict(channel_name: str, data: dict) -> Post:
 
 def get_channel_posts_info(channel_name: str) -> list[Post]:
     with yt_dlp.YoutubeDL(_build_ydl_opts()) as ydl:
-        listing = ydl.extract_info(f"https://www.youtube.com/@mit", download=False)
+        listing = ydl.extract_info(f"https://www.youtube.com/@jp-f6s", download=True)
         entries = listing["entries"] or []
         out: list[Post] = []
         for e in entries:
@@ -85,7 +87,7 @@ def get_channel_posts_info(channel_name: str) -> list[Post]:
                 continue
         return out
 
-posts = get_channel_posts_info("mit")
+posts = get_channel_posts_info("jp-f6s")
 
 for post in posts:
     print(post.pb_date)
