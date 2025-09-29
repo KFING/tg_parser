@@ -71,12 +71,15 @@ def _audio_only_formats(formats: list[dict]) -> RawPostMediaExt | None:
             )
 
 
-def _video_info_from_infodict(channel_name: str, data: dict) -> Post:
+def _video_info_from_info_dict(channel_name: str, data: dict) -> Post:
+    post_id = data["id"]
+    with yt_dlp.YoutubeDL(_build_ydl_opts_for_video_subtitle()) as ydl:
+        ydl.download(f"https://www.youtube.com/watch?v={post_id}")
     post = Post(
         source=Source.YOUTUBE,
         channel_name=channel_name,
         title=data["fulltitle"],
-        post_id=data["id"],
+        post_id=post_id,
         description=data["description"],
         content=None,
         pb_date=_parse_upload_date(data["upload_date"]),
@@ -120,7 +123,7 @@ def get_channel_posts_info(channel_name: str) -> list[Post]:
         out: list[Post] = []
         for e in entries:
             try:
-                out.append(_video_info_from_infodict(channel_name, e))
+                out.append(_video_info_from_info_dict(channel_name, e))
 
             except Exception:
                 continue
@@ -144,25 +147,17 @@ def get_all_videos(channel_name: str) -> list[Post]:
 
 
 async def get_channel_posts_list(channel_name: str, *, log_extra: dict[str, str]) -> list[Post] | None:
-    dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.YOUTUBE, channel_name))
+    """dt_to = await rds.get(redis_models.source_channel_name_dt_to(Source.YOUTUBE, channel_name))
     if not dt_to:
-        await rds.set(redis_models.source_channel_name_status(Source.YOUTUBE, channel_name), TaskStatus.free.value)
-        return None
+        dt_to = END_OF_EPOCH
     dt_from = await rds.get(redis_models.source_channel_name_dt_from(Source.YOUTUBE, channel_name))
     if not dt_from:
-        await rds.set(redis_models.source_channel_name_status(Source.YOUTUBE, channel_name), TaskStatus.free.value)
-        return None
+        dt_from = START_OF_EPOCH
     utc_dt_to = datetime.fromisoformat(dt_to.decode("utf-8"))
-    utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))
+    utc_dt_from = datetime.fromisoformat(dt_from.decode("utf-8"))"""
     logger.debug("get_channel_posts_list :: start to finding yt posts", extra=log_extra)
     all_videos = await get_channel_posts_info(channel_name)
     logger.debug(f"get_channel_posts_list :: found {len(all_videos)} videos", extra=log_extra)
-    in_range: list[Post] = []
-    for video in all_videos:
-        if not video.pb_date:
-            continue
-        if utc_dt_from <= video.pb_date <= utc_dt_to:
-            in_range.append(video)
     logger.debug(f"get_channel_posts_list :: found in_range {len(in_range)} videos", extra=log_extra)
     in_range.sort(key=lambda v: v.pb_date or date.min, reverse=True)
     logger.debug("get_channel_posts_list :: finish finding posts --> start to download subtitles", extra=log_extra)
